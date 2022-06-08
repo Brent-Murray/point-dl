@@ -1,9 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[ ]:
-
-
 import glob
 import os
 from datetime import datetime
@@ -13,23 +7,6 @@ import laspy
 import numpy as np
 import torch
 from torch_geometric.data import Data, InMemoryDataset
-
-
-# In[ ]:
-
-
-def folder_structure():
-    # Create folder structure
-    folders = ["model", "results"]
-    for f in folders:
-        try:
-            os.makedirs(f"./output/{f}")
-            print(f"Directory {f} created")
-        except OSError as error:
-            print(f"Directory {f} cannot be created or is already created")
-
-
-# In[ ]:
 
 
 def read_las(pointcloudfile, get_attributes=False, useevery=1):
@@ -59,10 +36,6 @@ def read_las(pointcloudfile, get_attributes=False, useevery=1):
         for las_field in las_fields:  # get all fields
             attributes[las_field] = inFile.points[las_field][::useevery]
         return (coords, attributes)
-
-
-# In[ ]:
-
 
 class PointCloudsInFiles(InMemoryDataset):
     """Point cloud dataset where one data point is a file."""
@@ -121,3 +94,23 @@ class PointCloudsInFiles(InMemoryDataset):
             return None
         return sample
 
+
+class IOStream:
+    def __init__(self, path):
+        self.f = open(path, "a")
+
+    def cprint(self, text):
+        print(text)
+        self.f.write(text + "\n")
+        self.f.flush
+
+    def close(self):
+        sefl.f.close()
+        
+def _init_(model_name):
+    if not os.path.exists("checkpoints"):
+        os.makedirs("checkpoints")
+    if not os.path.exists("checkpoints/" + model_name):
+        os.makedirs("checkpoints/" + model_name)
+    if not os.path.exists("checkpoints/" + model_name + "/models"):
+        os.makedirs("checkpoints/" + model_name + "/models")
