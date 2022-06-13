@@ -6,9 +6,10 @@ from torch_geometric.nn import XConv, fps, global_mean_pool
 
 
 class PointCNN(nn.Module):
-    def __init__(self, numfeatures):
+    def __init__(self, numfeatures, numclasses):
         super().__init__()
         self.numfeatures = numfeatures
+        self.numclasses = numclasses
 
         # First XConv layer
         self.conv1 = XConv(
@@ -33,7 +34,7 @@ class PointCNN(nn.Module):
         # Multilayer Perceptrons (MLPs) at the end of the PointCNN
         self.lin1 = nn.Linear(384, 256)
         self.lin2 = nn.Linear(256, 128)
-        self.lin3 = nn.Linear(128, 8)  # change last value for number of classes
+        self.lin3 = nn.Linear(128, self.numclasses)  # change last value for number of classes
 
     def forward(self, data):
         pos, batch = data.pos, data.batch
