@@ -275,3 +275,18 @@ def delete_files(root_dir, glob="*"):
     # Delete files
     for f in files:
         os.remove(f)
+        
+
+def plot_3d(coords):
+    # Plot parameters
+    plt.rcParams["figure.figsize"] = [7.00, 7.00]  # figure size
+    plt.rcParams["figure.autolayout"] = True  # auto layout
+
+    # Create figure
+    fig = plt.figure()  # initialize figure
+    ax = fig.add_subplot(111, projection="3d")  # 3d projection
+    x = coords[:, 0]  # x coordinates
+    y = coords[:, 1]  # y coordinates
+    z = coords[:, 2]  # z coordinates
+    ax.scatter(x, y, z, c=z, alpha=1)  # create a scatter plot
+    plt.show()  # show plot

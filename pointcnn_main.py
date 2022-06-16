@@ -13,6 +13,7 @@ from sklearn.metrics import classification_report, confusion_matrix
 from tensorboardX import SummaryWriter
 from torch_geometric.loader import DataLoader
 from tqdm import tqdm
+from utils.augmentation import AugmentPointCloudsInFiles
 from utils.tools import (
     IOStream,
     PointCloudsInFiles,
@@ -29,8 +30,8 @@ test_dataset_path = r"D:\MurrayBrent\data\RMF_ITD\PLOT_LAS\BUF_5M_SC\test"
 
 
 # Load pretrained model ("" if training)
-pretrained = r"D:\MurrayBrent\git\point-dl\notebooks\checkpoints\PointCNN_2048_6\models\best_model.t7"
-# pretrained = ""
+# pretrained = r"D:\MurrayBrent\git\point-dl\notebooks\checkpoints\PointCNN_2048_6\models\best_model.t7"
+pretrained = ""
 
 # max_points
 # 1024, 2048, 3072, 4096, 5120, 6144, 7168, 8192, 9216, 10240,
@@ -329,7 +330,7 @@ def train(
         )
         
         
-def main(pretrained):
+def main(pretrained="", augment=True):
     # Set up TensorBoard summary writer
     boardio = SummaryWriter(log_dir="checkpoints/" + model_name)
     _init_(model_name)
@@ -347,6 +348,19 @@ def main(pretrained):
             max_points=max_points,
             use_columns=use_columns,
         )
+
+        # Augment training data
+        if augment is True:
+            aug_trainset = AugmentPointCloudsInFiles(
+                train_dataset_path,
+                "*.laz",
+                "Class",
+                max_points=max_points,
+                use_columns=use_columns,
+            )
+
+            # Concat training and augmented training datasets
+            trainset = torch.utils.data.ConcatDataset([trainset, aug_trainset])
         # Load training dataset
         train_loader = DataLoader(trainset, batch_size=32, shuffle=True, num_workers=0)
 
