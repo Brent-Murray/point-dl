@@ -335,7 +335,7 @@ def train(
         )
         
         
-def main(pretrained="", augment=True):
+def main(pretrained="", augment=True, num_augs=1):
     # Set up TensorBoard summary writer
     boardio = SummaryWriter(log_dir="checkpoints/" + model_name)
     _init_(model_name)
@@ -356,16 +356,17 @@ def main(pretrained="", augment=True):
 
         # Augment training data
         if augment is True:
-            aug_trainset = AugmentPointCloudsInFiles(
-                train_dataset_path,
-                "*.laz",
-                "Class",
-                max_points=max_points,
-                use_columns=use_columns,
-            )
+            for i in range(num_augs):
+                aug_trainset = AugmentPointCloudsInFiles(
+                    train_dataset_path,
+                    "*.laz",
+                    "Class",
+                    max_points=max_points,
+                    use_columns=use_columns,
+                )
 
-            # Concat training and augmented training datasets
-            trainset = torch.utils.data.ConcatDataset([trainset, aug_trainset])
+                # Concat training and augmented training datasets
+                trainset = torch.utils.data.ConcatDataset([trainset, aug_trainset])
         # Load training dataset
         train_loader = DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=0)
 
@@ -430,5 +431,5 @@ def main(pretrained="", augment=True):
         
 # Runtime
 if __name__ == "__main__":
-    main(pretrained=pretrained)
+    main()
     # value = main(pretrained=pretrained)
