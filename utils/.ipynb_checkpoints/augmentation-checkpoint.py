@@ -88,7 +88,7 @@ def random_noise(coords, dim, x=None):
         if x is None:
             aug_x = aug_coords
         else:
-            aug_x = x + np.random.normal(0, random_noise_sd, size=(np.shape(x)))
+            aug_x = x + np.random.normal(0, random_noise_sd, size=(np.shape(x)[0], dim)) # added [0] and dim
     else:  # 50% chance to subtract
         aug_coords = coords - np.random.normal(
             0, random_noise_sd, size=(np.shape(coords)[0], 3)
@@ -96,7 +96,7 @@ def random_noise(coords, dim, x=None):
         if x is None:
             aug_x = aug_coords
         else:
-            aug_x = x - np.random.normal(0, random_noise_sd, size=(np.shape(x)))
+            aug_x = x - np.random.normal(0, random_noise_sd, size=(np.shape(x)[0], dim)) # added [0] and dim
 
     # Randomly choose up to 10% of augmented noise points
     use_idx = np.random.choice(
@@ -105,10 +105,8 @@ def random_noise(coords, dim, x=None):
     aug_coords = aug_coords[use_idx, :]  # get random points
     aug_coords = np.append(coords, aug_coords, axis=0)  # add points
     aug_x = aug_x[use_idx, :]  # get random point values
-    aug_x = np.append(x, aug_x)  # add random point values
+    aug_x = np.append(x, aug_x, axis=0)  # add random point values # ADDED axis=0
 
-    if dim == 1:
-        aug_x = aug_x[:, np.newaxis]
 
     return aug_coords, aug_x
 

@@ -38,13 +38,18 @@ pretrained = ""
 # Batch Size
 batch_size=2
 
+# Number of augmentations
+num_augs = 5
+
 # max_points
 # 1024, 2048, 3072, 4096, 5120, 6144, 7168, 8192, 9216, 10240,
 # 11264, 12288, 13312, 14336, 15360, 16384, 17408, 18432, 19456, 20480
+# 8192 points max with PointCNN
 max_points = 8192
 
 # Fields to include from pointcloud
-use_columns = ["intensity"]
+# use_columns = ["intensity"]
+use_columns = ["X","Y","Z"]
 
 # Classes: must be in same order as in data
 # classes = ["Con", "Dec"]
@@ -335,7 +340,7 @@ def train(
         )
         
         
-def main(pretrained="", augment=True, num_augs=1):
+def main(pretrained="", augment=True, num_augs=num_augs):
     # Set up TensorBoard summary writer
     boardio = SummaryWriter(log_dir="checkpoints/" + model_name)
     _init_(model_name)
