@@ -1,74 +1,13 @@
-import logging
-import os
-import sys
-
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
 import torch
-import torchvision
-from models.pointcnn import PointCNN
 from sklearn.metrics import classification_report, confusion_matrix
-from tensorboardX import SummaryWriter
-from torch_geometric.loader import DataLoader
 from tqdm import tqdm
-from utils.augmentation import AugmentPointCloudsInFiles
-from utils.tools import (
-    IOStream,
-    PointCloudsInFiles,
-    _init_,
-    delete_files,
-    make_confusion_matrix,
-)
+from utils.tools import make_confusion_matrix, delete_files
 
-
-# Path to datasets
-train_dataset_path = r"D:\MurrayBrent\data\RMF_ITD\PLOT_LAS\BUF_5M_SC\train"
-val_dataset_path = r"D:\MurrayBrent\data\RMF_ITD\PLOT_LAS\BUF_5M_SC\val"
-
-test_dataset_path = ""
-# test_dataset_path = r"D:\MurrayBrent\data\RMF_ITD\PLOT_LAS\BUF_5M_SC\test"
-
-
-# Load pretrained model ("" if training)
-# pretrained = r"D:\MurrayBrent\git\point-dl\notebooks\checkpoints\PointCNN_2048_6\models\best_model.t7"
-pretrained = ""
-
-# Batch Size
-batch_size=2
-
-# Number of augmentations
-num_augs = 5
-
-# max_points
-# 1024, 2048, 3072, 4096, 5120, 6144, 7168, 8192, 9216, 10240,
-# 11264, 12288, 13312, 14336, 15360, 16384, 17408, 18432, 19456, 20480
-# 8192 points max with PointCNN
-max_points = 8192
-
-# Fields to include from pointcloud
-# use_columns = ["intensity"]
-use_columns = ["X","Y","Z"]
-
-# Classes: must be in same order as in data
-# classes = ["Con", "Dec"]
-classes = [
-    "Jack Pine",
-    "White Spruce",
-    "Black Spruce",
-    # "Balsam Fir",
-    # "Eastern White Cedar",
-    "American Larch",
-    "Paper Birch",
-    "Trembling Aspen",
-]
-
-# Model Name
-model_name = f"PointCNN_{max_points}_{len(classes)}"
-
-
-def test_one_epoch(device, model, test_loader, testing=False):
+def test_one_epoch(device, model, test_loader, classes, testing=False):
     model.eval()  # https://stackoverflow.com/questions/60018578/what-does-model-eval-do-in-pytorch
     test_loss = 0.0
     pred = 0.0
@@ -134,7 +73,7 @@ def test_one_epoch(device, model, test_loader, testing=False):
         return test_loss, accuracy, out
     
     
-def test(device, model, test_loader, textio):
+def test(device, model, test_loader, textio, classes):
     # Run test_one_epoch with testing as true
     test_loss, test_accuracy, out = test_one_epoch(
         device, model, test_loader, testing=True
@@ -199,6 +138,7 @@ def train(
     model,
     train_loader,
     test_loader,
+    classes,
     boardio,
     textio,
     checkpoint,
@@ -206,11 +146,13 @@ def train(
     optimizer="Adam",
     start_epoch=0,
     epochs=200,
+    early_stopping = True,
+    patience = 20, # Added patience for early stopping
 ):
     # Set up optimizer
     learnable_params = filter(lambda p: p.requires_grad, model.parameters())
     if optimizer == "Adam":  # Adam optimizer
-        optimizer = torch.optim.Adam(learnable_params)
+        optimizer = torch.optim.Adam(learnable_params, lr=0.001)
     else:  # SGD optimizer
         optimizer = torch.optim.SGD(learnable_params, lr=0.1)
 
@@ -221,6 +163,7 @@ def train(
 
     # Define best_test_loss
     best_test_loss = np.inf
+    triggertimes = 0 # Added triggertimes
 
     # Run for every epoch
     for epoch in tqdm(
@@ -233,7 +176,7 @@ def train(
 
         # Validate model: testing=False
         test_loss, test_accuracy, conf_mat, cls_rpt = test_one_epoch(
-            device, model, test_loader, testing=False
+            device, model, test_loader, classes, testing=False
         )
 
         # Save Best Model
@@ -339,102 +282,16 @@ def train(
             % (epoch + 1, train_accuracy, test_accuracy)
         )
         
-        
-def main(pretrained="", augment=True, num_augs=num_augs):
-    # Set up TensorBoard summary writer
-    boardio = SummaryWriter(log_dir="checkpoints/" + model_name)
-    _init_(model_name)
+        # Added section below for early stopping
+        if early_stopping is True:
+            if test_loss > best_test_loss:
+                triggertimes += 1
+                textio.cprint(f"Trigger Times:{triggertimes}")
 
-    # Set up logger
-    textio = IOStream("checkpoints/" + model_name + "/run.log")
-    textio.cprint(model_name)
+                if triggertimes >= patience:
+                    textio.cprint("Early Stopping")
+                    return test_loss
 
-    # Get training, validation and test datasets
-    if train_dataset_path:
-        trainset = PointCloudsInFiles(
-            train_dataset_path,
-            "*.laz",
-            "Class",
-            max_points=max_points,
-            use_columns=use_columns,
-        )
-
-        # Augment training data
-        if augment is True:
-            for i in range(num_augs):
-                aug_trainset = AugmentPointCloudsInFiles(
-                    train_dataset_path,
-                    "*.laz",
-                    "Class",
-                    max_points=max_points,
-                    use_columns=use_columns,
-                )
-
-                # Concat training and augmented training datasets
-                trainset = torch.utils.data.ConcatDataset([trainset, aug_trainset])
-        # Load training dataset
-        train_loader = DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=0)
-
-    if val_dataset_path:
-        valset = PointCloudsInFiles(
-            val_dataset_path,
-            "*.laz",
-            "Class",
-            max_points=max_points,
-            use_columns=use_columns,
-        )
-        # Load validation dataset
-        val_loader = DataLoader(valset, batch_size=batch_size, shuffle=False, num_workers=0)
-
-    if test_dataset_path:
-        testset = PointCloudsInFiles(
-            test_dataset_path,
-            "*.laz",
-            "Class",
-            max_points=max_points,
-            use_columns=use_columns,
-        )
-        # Load testing dataset
-        test_loader = DataLoader(testset, batch_size=batch_size, shuffle=False, num_workers=0)
-
-    # Define device
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-    # Define model
-    model = PointCNN(numfeatures=len(use_columns), numclasses=len(classes))
-
-    # Checkpoint
-    checkpoint = None
-
-    # Load existing model
-    if pretrained:
-        assert os.path.isfile(pretrained)
-        model.load_state_dict(torch.load(pretrained, map_location="cpu"))
-
-    # Send model to defined device
-    model.to(device)
-
-    # Run testing
-    if pretrained:
-        finished = test(
-            device=device, model=model, test_loader=test_loader, textio=textio
-        )
-        return finished
-    # Run training
-    else:
-        train(
-            device=device,
-            model=model,
-            model_name=model_name,
-            train_loader=train_loader,
-            test_loader=val_loader,
-            boardio=boardio,
-            textio=textio,
-            checkpoint=checkpoint,
-        )
-        
-        
-# Runtime
-if __name__ == "__main__":
-    main()
-    # value = main(pretrained=pretrained)
+            else:
+                textio.cprint("Trigger Times: 0")
+                triggertimes = 0

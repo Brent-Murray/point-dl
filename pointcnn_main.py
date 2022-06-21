@@ -36,20 +36,20 @@ test_dataset_path = ""
 pretrained = ""
 
 # Batch Size
-batch_size=2
+batch_size=32
 
 # Number of augmentations
-num_augs = 5
+num_augs = 15
 
 # max_points
 # 1024, 2048, 3072, 4096, 5120, 6144, 7168, 8192, 9216, 10240,
 # 11264, 12288, 13312, 14336, 15360, 16384, 17408, 18432, 19456, 20480
 # 8192 points max with PointCNN
-max_points = 8192
+max_points = 1024
 
 # Fields to include from pointcloud
-# use_columns = ["intensity"]
-use_columns = ["X","Y","Z"]
+use_columns = ["intensity"]
+# use_columns = ["X","Y","Z"]
 
 # Classes: must be in same order as in data
 # classes = ["Con", "Dec"]
@@ -206,11 +206,13 @@ def train(
     optimizer="Adam",
     start_epoch=0,
     epochs=200,
+    early_stopping = True,
+    patience = 20, # Added patience for early stopping
 ):
     # Set up optimizer
     learnable_params = filter(lambda p: p.requires_grad, model.parameters())
     if optimizer == "Adam":  # Adam optimizer
-        optimizer = torch.optim.Adam(learnable_params)
+        optimizer = torch.optim.Adam(learnable_params, lr=0.001)
     else:  # SGD optimizer
         optimizer = torch.optim.SGD(learnable_params, lr=0.1)
 
@@ -221,6 +223,7 @@ def train(
 
     # Define best_test_loss
     best_test_loss = np.inf
+    triggertimes = 0 # Added triggertimes
 
     # Run for every epoch
     for epoch in tqdm(
@@ -338,6 +341,20 @@ def train(
             "EPOCH:: %d, Training Accuracy: %f Validation Accuracy: %f"
             % (epoch + 1, train_accuracy, test_accuracy)
         )
+        
+        # Added section below for early stopping
+        if early_stopping is True:
+            if test_loss > best_test_loss:
+                triggertimes += 1
+                textio.cprint(f"Trigger Times:{triggertimes}")
+
+                if triggertimes >= patience:
+                    textio.cprint("Early Stopping")
+                    return test_loss
+
+            else:
+                textio.cprint("Trigger Times: 0")
+                triggertimes = 0
         
         
 def main(pretrained="", augment=True, num_augs=num_augs):
