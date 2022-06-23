@@ -13,8 +13,7 @@ class SAModule(torch.nn.Module):
     def forward(self, x, pos, batch):
         idx = fps(pos, batch, ratio=self.ratio)  # furthest point sampling
         row, col = radius(
-            pos, pos[idx], self.r, batch, batch[idx], max_num_neighbors=64
-        )  # https://pytorch-geometric.readthedocs.io/en/1.3.1/modules/nn.html#torch_geometric.nn.pool.radius
+            pos, pos[idx], self.r, batch, batch[idx], max_num_neighbors=64)
         edge_index = torch.stack([col, row], dim=0)
         x_dst = None if x is None else x[idx]
         x = self.conv((x, x_dst), (pos, pos[idx]), edge_index)  # new x after PointConv
@@ -50,7 +49,6 @@ class Net(torch.nn.Module):
         self.sa3_module = GlobalSAModule(MLP([256 + 3, 256, 512, 1024]))
 
         # MLP
-        # MLP: https://pytorch-geometric.readthedocs.io/en/latest/modules/nn.html#torch_geometric.nn.models.MLP
         self.mlp = MLP(
             [1024, 512, 256, self.num_classes], dropout=0.5, batch_norm=False
         )
