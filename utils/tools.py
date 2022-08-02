@@ -111,6 +111,60 @@ class PointCloudsInFiles(InMemoryDataset):
         return sample
     
     
+class PointCloudsInPickle(InMemoryDataset):
+    """Point cloud dataset where one data point is a file."""
+
+    def __init__(self, pickle, column_name="", max_points=200_000, use_columns=None):
+        """
+        Args:
+            pickle (string): Path to pickle dataframe
+            column_name (string): Column name to use as target variable (e.g. "Classification")
+            use_columns (list[string]): Column names to add as additional input
+        """
+        self.pickle = pd.read_pickle(pickle)
+        self.column_name = column_name
+        self.max_points = max_points
+        if use_columns is None:
+            use_columns = []
+        self.use_columns = use_columns
+        super().__init__()
+
+    def __len__(self):
+        return len(self.pickle)
+
+    def __getitem__(self, idx):
+        if torch.is_tensor(idx):
+            idx = idx.tolist()
+
+        pickle_idx = self.pickle.iloc[idx : idx + 1]
+        filename = pickle_idx["FilePath"].item()
+
+        coords, attrs = read_las(filename, get_attributes=True)
+        if coords.shape[0] >= self.max_points:
+            use_idx = np.random.choice(coords.shape[0], self.max_points, replace=False)
+        else:
+            use_idx = np.random.choice(coords.shape[0], self.max_points, replace=True)
+        if len(self.use_columns) > 0:
+            x = np.empty((self.max_points, len(self.use_columns)), np.float32)
+            for eix, entry in enumerate(self.use_columns):
+                x[:, eix] = attrs[entry][use_idx]
+        else:
+            x = coords[use_idx, :]
+        coords = coords - np.mean(coords, axis=0)  # centralize coordinates
+
+        # impute target
+        target = pickle_idx["perc_specs"].item()
+
+        sample = Data(
+            x=torch.from_numpy(x).float(),
+            y=torch.from_numpy(np.array(target)).type(torch.half),
+            pos=torch.from_numpy(coords[use_idx, :]).float(),
+        )
+        if coords.shape[0] < 100:
+            return None
+        return sample
+    
+    
 class IOStream:
     def __init__(self, path):
         # Open file in append
