@@ -11,7 +11,8 @@ import torchvision
 from models.dgcnn import DGCNN
 from sklearn.metrics import classification_report, confusion_matrix
 from tensorboardX import SummaryWriter
-from torch_geometric.loader import DataLoader
+from torch_geometric.nn import DataParallel
+from torch_geometric.loader import DataLoader, DataListLoader
 from tqdm import tqdm
 from utils.augmentation import AugmentPointCloudsInFiles
 from utils.tools import (
@@ -34,15 +35,15 @@ test_dataset_path = ""
 pretrained = ""
 
 # Batch Size
-batch_size=4
+batch_size = 2
 
 # Number of augmentations
-num_augs = 5
+num_augs = 1
 
 # max_points
 # 1024, 2048, 3072, 4096, 5120, 6144, 7168, 8192, 9216, 10240,
 # 11264, 12288, 13312, 14336, 15360, 16384, 17408, 18432, 19456, 20480
-max_points_list = [1024]
+max_points_list = [1024, 2048, 3072, 4096, 5120, 6144, 7168, 8192, 9216, 10240]
 
 # Fields to include from pointcloud
 use_columns = ["intensity"]
@@ -62,7 +63,7 @@ classes = [
 ]
 
 
-def main(pretrained="", augment=True, num_augs=num_augs):
+def main(pretrained="", augment=False, num_augs=num_augs):
     for max_points in tqdm(max_points_list, desc="Total: ", leave=False, colour="blue"):
         
         # Model Name
@@ -74,6 +75,12 @@ def main(pretrained="", augment=True, num_augs=num_augs):
         # Set up logger
         textio = IOStream("checkpoints/" + model_name + "/run.log")
         textio.cprint(model_name)
+        
+        # Check for multi GPU's
+        if torch.cuda.device_count() > 1:
+            multi_gpu = True
+        else:
+            multi_gpu = False
 
         # Get training, validation and test datasets
         if train_dataset_path:
@@ -99,7 +106,10 @@ def main(pretrained="", augment=True, num_augs=num_augs):
                     # Concat training and augmented training datasets
                     trainset = torch.utils.data.ConcatDataset([trainset, aug_trainset])
             # Load training dataset
-            train_loader = DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=0)
+            if multi_gpu is True:
+                train_loader = DataListLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=0)
+            else:
+                train_loader = DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=0)
 
         if val_dataset_path:
             valset = PointCloudsInFiles(
@@ -109,8 +119,12 @@ def main(pretrained="", augment=True, num_augs=num_augs):
                 max_points=max_points,
                 use_columns=use_columns,
             )
+            
             # Load validation dataset
-            val_loader = DataLoader(valset, batch_size=batch_size, shuffle=False, num_workers=0)
+            if multi_gpu is True:
+                val_loader = DataListLoader(valset, batch_size=batch_size, shuffle=False, num_workers=0)
+            else:
+                val_loader = DataLoader(valset, batch_size=batch_size, shuffle=False, num_workers=0)
 
         if test_dataset_path:
             testset = PointCloudsInFiles(
@@ -121,10 +135,13 @@ def main(pretrained="", augment=True, num_augs=num_augs):
                 use_columns=use_columns,
             )
             # Load testing dataset
-            test_loader = DataLoader(testset, batch_size=batch_size, shuffle=False, num_workers=0)
+            if multi_gpu is True:
+                test_loader = DataListLoader(testset, batch_size=batch_size, shuffle=False, num_workers=0)
+            else:
+                test_loader = DataLoader(testset, batch_size=batch_size, shuffle=False, num_workers=0)
 
         # Define device
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
         # Define model
         model = DGCNN(num_classes=len(classes), num_features=len(use_columns))
@@ -140,6 +157,11 @@ def main(pretrained="", augment=True, num_augs=num_augs):
         # Send model to defined device
         model.to(device)
 
+        # Set DataParallel if Multiple GPUs available
+        if multi_gpu is True:
+            print("Using Multiple GPUs")
+            model = DataParallel(model.cuda(), device_ids=list(range(0,torch.cuda.device_count())))
+            
         # Run testing
         if pretrained:
             finished = test(
