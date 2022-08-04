@@ -159,7 +159,8 @@ def main(pretrained="", augment=True, num_augs=num_augs):
 
         # Send model to defined device
         model.to(device)
-
+        
+        # Set DataParallel if Multiple GPUs available
         if multi_gpu is True:
             print("Using Multiple GPUs")
             model = DataParallel(model.cuda(), device_ids=list(range(0,torch.cuda.device_count())))
