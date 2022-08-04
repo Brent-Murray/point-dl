@@ -241,7 +241,7 @@ class AugmentPointCloudsInPickle(InMemoryDataset):
 
         sample = Data(
             x=torch.from_numpy(x).float(),
-            y=torch.from_numpy(np.array(target)).type(torch.half),
+            y=torch.from_numpy(np.array(target)).float(),
             pos=torch.from_numpy(coords).float(),
         )
         if coords.shape[0] < 100:
