@@ -1,3 +1,5 @@
+# Adapted from https://github.com/pyg-team/pytorch_geometric/tree/master/examples
+
 import torch
 import torch.nn.functional as F
 from torch_geometric.nn import MLP, PointConv, fps, global_max_pool, radius
