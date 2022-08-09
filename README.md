@@ -9,6 +9,7 @@ Point based deep learning modules and associated tools for classification.
 * utils
   * augmentation.py - A script that performs augmentations on point clouds
   * data_prep.py - A script that splits the dataset and outputs a pickel and csv of the filepaths and species composition
+  * resample_point_cloud.py - A script that resamples point clouds and writes them out
   * tools.py - A script with useful tools for point cloud deep learning and classification
   * train.py - A script that defines training/validation/testing process
 * dgcnn_main.py - A script that runs the Dynamic Graph CNN Model
