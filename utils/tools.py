@@ -4,11 +4,11 @@ from datetime import datetime
 from pathlib import Path
 
 import laspy
+import matplotlib.pyplot as plt
 import numpy as np
-import torch
 import pandas as pd
 import seaborn as sns
-import matplotlib.pyplot as plt
+import torch
 from sklearn.metrics import confusion_matrix
 from torch_geometric.data import Data, InMemoryDataset
 
@@ -40,13 +40,59 @@ def read_las(pointcloudfile, get_attributes=False, useevery=1):
         for las_field in las_fields:  # get all fields
             attributes[las_field] = inFile.points[las_field][::useevery]
         return (coords, attributes)
-    
+
+
+def farthest_point_sampling(coords, k):
+    # Adapted from https://minibatchai.com/sampling/2021/08/07/FPS.html
+
+    # Get points into numpy array
+    points = np.array(coords)
+
+    # Get points index values
+    idx = np.arange(len(coords))
+
+    # Initialize use_idx
+    use_idx = np.zeros(k, dtype="int")
+
+    # Initialize dists
+    dists = np.ones_like(idx) * float("inf")
+
+    # Select a point from its index
+    selected = 0
+    use_idx[0] = idx[selected]
+
+    # Delete Selected
+    idx = np.delete(idx, selected)
+
+    # Iteratively select points for a maximum of k samples
+    for i in range(1, k):
+        # Find distance to last added point and all others
+        last_added = use_idx[i - 1]  # get last added point
+        dist_to_last_added_point = ((points[last_added] - points[idx]) ** 2).sum(-1)
+
+        # Update dists
+        dists[idx] = np.minimum(dist_to_last_added_point, dists[idx])
+
+        # Select point with largest distance
+        selected = np.argmax(dists[idx])
+        use_idx[i] = idx[selected]
+
+        # Update idx
+        idx = np.delete(idx, selected)
+    return use_idx
+
 
 class PointCloudsInFiles(InMemoryDataset):
     """Point cloud dataset where one data point is a file."""
 
     def __init__(
-        self, root_dir, glob="*", column_name="", max_points=200_000, use_columns=None
+        self,
+        root_dir,
+        glob="*",
+        column_name="",
+        max_points=200_000,
+        samp_meth="fps",
+        use_columns=None,
     ):
         """
         Args:
@@ -61,6 +107,7 @@ class PointCloudsInFiles(InMemoryDataset):
         if use_columns is None:
             use_columns = []
         self.use_columns = use_columns
+        self.samp_meth = samp_meth
         super().__init__()
 
     def __len__(self):
@@ -79,7 +126,12 @@ class PointCloudsInFiles(InMemoryDataset):
 
         # Resample number of points to max_points
         if coords.shape[0] >= self.max_points:
-            use_idx = np.random.choice(coords.shape[0], self.max_points, replace=False)
+            if self.samp_meth == "random":
+                use_idx = np.random.choice(
+                    coords.shape[0], self.max_points, replace=False
+                )
+            if self.samp_meth == "fps":
+                use_idx = farthest_point_sampling(coords, self.max_points)
         else:
             use_idx = np.random.choice(coords.shape[0], self.max_points, replace=True)
 
@@ -109,12 +161,19 @@ class PointCloudsInFiles(InMemoryDataset):
         if coords.shape[0] < 100:
             return None
         return sample
-    
-    
+
+
 class PointCloudsInPickle(InMemoryDataset):
     """Point cloud dataset where one data point is a file."""
 
-    def __init__(self, pickle, column_name="", max_points=200_000, use_columns=None):
+    def __init__(
+        self,
+        pickle,
+        column_name="",
+        max_points=200_000,
+        samp_meth="fps",
+        use_columns=None,
+    ):
         """
         Args:
             pickle (string): Path to pickle dataframe
@@ -127,6 +186,7 @@ class PointCloudsInPickle(InMemoryDataset):
         if use_columns is None:
             use_columns = []
         self.use_columns = use_columns
+        self.samp_meth = samp_meth
         super().__init__()
 
     def __len__(self):
@@ -136,14 +196,25 @@ class PointCloudsInPickle(InMemoryDataset):
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
+        # Get file name
         pickle_idx = self.pickle.iloc[idx : idx + 1]
         filename = pickle_idx["FilePath"].item()
 
+        # Read las/laz file
         coords, attrs = read_las(filename, get_attributes=True)
+
+        # Resample number of points to max_points
         if coords.shape[0] >= self.max_points:
-            use_idx = np.random.choice(coords.shape[0], self.max_points, replace=False)
+            if self.samp_meth == "random":
+                use_idx = np.random.choice(
+                    coords.shape[0], self.max_points, replace=False
+                )
+            if self.samp_meth == "fps":
+                use_idx = farthest_point_sampling(coords, self.max_points)
         else:
             use_idx = np.random.choice(coords.shape[0], self.max_points, replace=True)
+
+        # Get x values
         if len(self.use_columns) > 0:
             x = np.empty((self.max_points, len(self.use_columns)), np.float32)
             for eix, entry in enumerate(self.use_columns):
@@ -157,15 +228,16 @@ class PointCloudsInPickle(InMemoryDataset):
 
         sample = Data(
             x=torch.from_numpy(x).float(),
-            y=torch.from_numpy(np.array(target)).float(),
+            y=torch.from_numpy(np.array(target)).type(torch.half),
             pos=torch.from_numpy(coords[use_idx, :]).float(),
         )
         if coords.shape[0] < 100:
             return None
         return sample
-    
-    
+
+
 class IOStream:
+    # Adapted from https://github.com/vinits5/learning3d/blob/master/examples/train_pointnet.py
     def __init__(self, path):
         # Open file in append
         self.f = open(path, "a")
@@ -178,8 +250,8 @@ class IOStream:
 
     def close(self):
         sefl.f.close()  # close file
-        
-        
+
+
 def _init_(model_name):
     # Create folder structure
     if not os.path.exists("checkpoints"):
@@ -200,9 +272,11 @@ def _init_(model_name):
         os.makedirs("checkpoints/" + model_name + "/classification_report/all")
     if not os.path.exists("checkpoints/" + model_name + "/classification_report/best"):
         os.makedirs("checkpoints/" + model_name + "/classification_report/best")
-        
-        
+
+
 def make_confusion_matrix(
+    # Adapted from https://github.com/DTrimarchi10/confusion_matrix
+    
     cf,
     group_names=None,
     categories="auto",
@@ -320,7 +394,7 @@ def make_confusion_matrix(
 
     if title:
         plt.title(title)
-        
+
 
 def delete_files(root_dir, glob="*"):
     # List files in root_dir with glob
@@ -329,7 +403,7 @@ def delete_files(root_dir, glob="*"):
     # Delete files
     for f in files:
         os.remove(f)
-        
+
 
 def plot_3d(coords):
     # Plot parameters

@@ -38,8 +38,8 @@ def read_las(pointcloudfile, get_attributes=False, useevery=1):
         for las_field in las_fields:  # get all fields
             attributes[las_field] = inFile.points[las_field][::useevery]
         return (coords, attributes)
-    
-    
+
+
 def rotate_points(coords):
     rotation = np.random.uniform(-180, 180)
     # Convert rotation values to radians
@@ -89,7 +89,9 @@ def random_noise(coords, dim, x=None):
         if x is None:
             aug_x = aug_coords
         else:
-            aug_x = x + np.random.normal(0, random_noise_sd, size=(np.shape(x)[0], dim)) # added [0] and dim
+            aug_x = x + np.random.normal(
+                0, random_noise_sd, size=(np.shape(x)[0], dim)
+            )  # added [0] and dim
     else:  # 50% chance to subtract
         aug_coords = coords - np.random.normal(
             0, random_noise_sd, size=(np.shape(coords)[0], 3)
@@ -97,26 +99,75 @@ def random_noise(coords, dim, x=None):
         if x is None:
             aug_x = aug_coords
         else:
-            aug_x = x - np.random.normal(0, random_noise_sd, size=(np.shape(x)[0], dim)) # added [0] and dim
+            aug_x = x - np.random.normal(
+                0, random_noise_sd, size=(np.shape(x)[0], dim)
+            )  # added [0] and dim
 
     # Randomly choose up to 10% of augmented noise points
     use_idx = np.random.choice(
-        aug_coords.shape[0], random.randint(0, round(len(aug_coords) * 0.1)), replace=False
+        aug_coords.shape[0],
+        random.randint(0, round(len(aug_coords) * 0.1)),
+        replace=False,
     )
     aug_coords = aug_coords[use_idx, :]  # get random points
     aug_coords = np.append(coords, aug_coords, axis=0)  # add points
     aug_x = aug_x[use_idx, :]  # get random point values
     aug_x = np.append(x, aug_x, axis=0)  # add random point values # ADDED axis=0
 
-
     return aug_coords, aug_x
+
+
+def farthest_point_sampling(coords, k):
+    # Adapted from https://minibatchai.com/sampling/2021/08/07/FPS.html
+
+    # Get points into numpy array
+    points = np.array(coords)
+
+    # Get points index values
+    idx = np.arange(len(coords))
+
+    # Initialize use_idx
+    use_idx = np.zeros(k, dtype="int")
+
+    # Initialize dists
+    dists = np.ones_like(idx) * float("inf")
+
+    # Select a point from its index
+    selected = 0
+    use_idx[0] = idx[selected]
+
+    # Delete Selected
+    idx = np.delete(idx, selected)
+
+    # Iteratively select points for a maximum of k samples
+    for i in range(1, k):
+        # Find distance to last added point and all others
+        last_added = use_idx[i - 1]  # get last added point
+        dist_to_last_added_point = ((points[last_added] - points[idx]) ** 2).sum(-1)
+
+        # Update dists
+        dists[idx] = np.minimum(dist_to_last_added_point, dists[idx])
+
+        # Select point with largest distance
+        selected = np.argmax(dists[idx])
+        use_idx[i] = idx[selected]
+
+        # Update idx
+        idx = np.delete(idx, selected)
+    return use_idx
 
 
 class AugmentPointCloudsInFiles(InMemoryDataset):
     """Point cloud dataset where one data point is a file."""
 
     def __init__(
-        self, root_dir, glob="*", column_name="", max_points=200_000, use_columns=None
+        self,
+        root_dir,
+        glob="*",
+        column_name="",
+        max_points=200_000,
+        samp_meth="fps",
+        use_columns=None,
     ):
         """
         Args:
@@ -131,6 +182,7 @@ class AugmentPointCloudsInFiles(InMemoryDataset):
         if use_columns is None:
             use_columns = []
         self.use_columns = use_columns
+        self.samp_meth = samp_meth
         super().__init__()
 
     def __len__(self):
@@ -149,7 +201,12 @@ class AugmentPointCloudsInFiles(InMemoryDataset):
 
         # Resample number of points to max_points
         if coords.shape[0] >= self.max_points:
-            use_idx = np.random.choice(coords.shape[0], self.max_points, replace=False)
+            if self.samp_meth == "random":
+                use_idx = np.random.choice(
+                    coords.shape[0], self.max_points, replace=False
+                )
+            if self.samp_meth == "fps":
+                use_idx = farthest_point_sampling(coords, self.max_points)
         else:
             use_idx = np.random.choice(coords.shape[0], self.max_points, replace=True)
 
@@ -185,18 +242,26 @@ class AugmentPointCloudsInFiles(InMemoryDataset):
         if coords.shape[0] < 100:
             return None
         return sample
-    
+
 
 class AugmentPointCloudsInPickle(InMemoryDataset):
     """Point cloud dataset where one data point is a file."""
 
-    def __init__(self, pickle, column_name="", max_points=200_000, use_columns=None):
+    def __init__(
+        self,
+        pickle,
+        column_name="",
+        max_points=200_000,
+        samp_meth="fps",
+        use_columns=None,
+    ):
         self.pickle = pd.read_pickle(pickle)
         self.column_name = column_name
         self.max_points = max_points
         if use_columns is None:
             use_columns = []
         self.use_columns = use_columns
+        self.samp_meth = samp_meth
         super().__init__()
 
     def __len__(self):
@@ -215,7 +280,12 @@ class AugmentPointCloudsInPickle(InMemoryDataset):
 
         # Resample number of points to max_points
         if coords.shape[0] >= self.max_points:
-            use_idx = np.random.choice(coords.shape[0], self.max_points, replace=False)
+            if self.samp_meth == "random":
+                use_idx = np.random.choice(
+                    coords.shape[0], self.max_points, replace=False
+                )
+            if self.samp_meth == "fps":
+                use_idx = farthest_point_sampling(coords, self.max_points)
         else:
             use_idx = np.random.choice(coords.shape[0], self.max_points, replace=True)
 
