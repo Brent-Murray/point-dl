@@ -91,7 +91,7 @@ class PointCloudsInFiles(InMemoryDataset):
         glob="*",
         column_name="",
         max_points=200_000,
-        samp_meth="fps",
+        samp_meth=None, # one of None, "fps", or "random" 
         use_columns=None,
     ):
         """
@@ -125,15 +125,18 @@ class PointCloudsInFiles(InMemoryDataset):
         coords, attrs = read_las(filename, get_attributes=True)
 
         # Resample number of points to max_points
-        if coords.shape[0] >= self.max_points:
-            if self.samp_meth == "random":
-                use_idx = np.random.choice(
-                    coords.shape[0], self.max_points, replace=False
-                )
-            if self.samp_meth == "fps":
-                use_idx = farthest_point_sampling(coords, self.max_points)
+        if self.samp_meth is None:
+            use_idx = np.arange(len(coords))
         else:
-            use_idx = np.random.choice(coords.shape[0], self.max_points, replace=True)
+            if coords.shape[0] >= self.max_points:
+                if self.samp_meth == "random":
+                    use_idx = np.random.choice(
+                        coords.shape[0], self.max_points, replace=False
+                    )
+                if self.samp_meth == "fps":
+                    use_idx = farthest_point_sampling(coords, self.max_points)
+            else:
+                use_idx = np.random.choice(coords.shape[0], self.max_points, replace=True)
 
         # Get x values
         if len(self.use_columns) > 0:
@@ -171,7 +174,7 @@ class PointCloudsInPickle(InMemoryDataset):
         pickle,
         column_name="",
         max_points=200_000,
-        samp_meth="fps",
+        samp_meth=None, # one of None, "fps", or "random"
         use_columns=None,
     ):
         """
@@ -204,15 +207,18 @@ class PointCloudsInPickle(InMemoryDataset):
         coords, attrs = read_las(filename, get_attributes=True)
 
         # Resample number of points to max_points
-        if coords.shape[0] >= self.max_points:
-            if self.samp_meth == "random":
-                use_idx = np.random.choice(
-                    coords.shape[0], self.max_points, replace=False
-                )
-            if self.samp_meth == "fps":
-                use_idx = farthest_point_sampling(coords, self.max_points)
+        if self.samp_meth is None:
+            use_idx = np.arange(len(coords))
         else:
-            use_idx = np.random.choice(coords.shape[0], self.max_points, replace=True)
+            if coords.shape[0] >= self.max_points:
+                if self.samp_meth == "random":
+                    use_idx = np.random.choice(
+                        coords.shape[0], self.max_points, replace=False
+                    )
+                if self.samp_meth == "fps":
+                    use_idx = farthest_point_sampling(coords, self.max_points)
+            else:
+                use_idx = np.random.choice(coords.shape[0], self.max_points, replace=True)
 
         # Get x values
         if len(self.use_columns) > 0:
