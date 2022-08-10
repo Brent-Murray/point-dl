@@ -30,7 +30,7 @@ def test_one_epoch(device, model, test_loader, classes, testing=False):
         # Define validation loss using negative log likelihood loss and softmax
         if not torch.cuda.device_count() > 1:
             loss_val = torch.nn.functional.nll_loss(
-                torch.nn.functional.log_sofmax(output, dim=1), 
+                torch.nn.functional.log_softmax(output, dim=1), 
                 target=data.y,
             )
             

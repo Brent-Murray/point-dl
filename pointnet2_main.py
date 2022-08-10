@@ -25,8 +25,8 @@ from utils.tools import (
 from utils.train import train, test
 
 # Path to datasets
-train_dataset_path = r"D:\MurrayBrent\data\RMF_ITD\PLOT_LAS\BUF_5M_SC\train"
-val_dataset_path = r"D:\MurrayBrent\data\RMF_ITD\PLOT_LAS\BUF_5M_SC\val"
+train_dataset_path = r"D:\MurrayBrent\data\RMF_ITD\PLOT_LAS\BUF_5M_SC\train\trainingsets\fps"
+val_dataset_path = r"D:\MurrayBrent\data\RMF_ITD\PLOT_LAS\BUF_5M_SC\val\trainingsets\fps"
 test_dataset_path = ""
 # test_dataset_path = r"D:\MurrayBrent\data\RMF_ITD\PLOT_LAS\BUF_5M_SC\test"
 
@@ -35,7 +35,7 @@ test_dataset_path = ""
 pretrained = ""
 
 # Batch Size
-batch_size=32
+batch_size=8
 
 # Number of augmentations
 num_augs = 10
@@ -85,8 +85,9 @@ def main(pretrained="", augment=True, num_augs=num_augs):
 
         # Get training, validation and test datasets
         if train_dataset_path:
+            train_data_path = os.path.join(train_dataset_path, str(max_points))
             trainset = PointCloudsInFiles(
-                train_dataset_path,
+                train_data_path,
                 "*.laz",
                 "Class",
                 max_points=max_points,
@@ -97,7 +98,7 @@ def main(pretrained="", augment=True, num_augs=num_augs):
             if augment is True:
                 for i in range(num_augs):
                     aug_trainset = AugmentPointCloudsInFiles(
-                        train_dataset_path,
+                        train_data_path,
                         "*.laz",
                         "Class",
                         max_points=max_points,
@@ -114,8 +115,9 @@ def main(pretrained="", augment=True, num_augs=num_augs):
 
 
         if val_dataset_path:
+            val_data_path = os.path.join(val_dataset_path, str(max_points))
             valset = PointCloudsInFiles(
-                val_dataset_path,
+                val_data_path,
                 "*.laz",
                 "Class",
                 max_points=max_points,
@@ -129,8 +131,9 @@ def main(pretrained="", augment=True, num_augs=num_augs):
 
 
         if test_dataset_path:
+            test_data_path = os.path.join(test_dataset_path, str(max_points))
             testset = PointCloudsInFiles(
-                test_dataset_path,
+                test_data_path,
                 "*.laz",
                 "Class",
                 max_points=max_points,
