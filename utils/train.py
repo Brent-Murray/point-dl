@@ -9,81 +9,82 @@ from utils.tools import make_confusion_matrix, delete_files
 
 def test_one_epoch(device, model, test_loader, classes, testing=False):
     model.eval()  # https://stackoverflow.com/questions/60018578/what-does-model-eval-do-in-pytorch
-    test_loss = 0.0
-    pred = 0.0
-    count = 0
-    y_pred = torch.tensor([], device=device)  # empty tensor
-    y_true = torch.tensor([], device=device)  # empty tensor
-    outs = torch.tensor([], device=device)  # empty tensor
+    with torch.no_grad():
+        test_loss = 0.0
+        pred = 0.0
+        count = 0
+        y_pred = torch.tensor([], device=device)  # empty tensor
+        y_true = torch.tensor([], device=device)  # empty tensor
+        outs = torch.tensor([], device=device)  # empty tensor
 
-    # Iterate through data in loader
-    for i, data in enumerate(
-        tqdm(test_loader, desc="Validation", leave=False, colour="green")
-    ):
-        # Send data to defined device
-        if not torch.cuda.device_count() > 1:
-            data.to(device)
+        # Iterate through data in loader
+        for i, data in enumerate(
+            tqdm(test_loader, desc="Validation", leave=False, colour="green")
+        ):
+            # Send data to defined device
+            if not torch.cuda.device_count() > 1:
+                data.to(device)
 
-        # Call model
-        output = model(data)
+            # Call model
+            output = model(data)
 
-        # Define validation loss using negative log likelihood loss and softmax
-        if not torch.cuda.device_count() > 1:
-            loss_val = torch.nn.functional.nll_loss(
-                torch.nn.functional.log_softmax(output, dim=1), 
-                target=data.y,
+            # Define validation loss using negative log likelihood loss and softmax
+            if not torch.cuda.device_count() > 1:
+                loss_val = torch.nn.functional.nll_loss(
+                    torch.nn.functional.log_softmax(output, dim=1), 
+                    target=data.y,
+                )
+
+            else:
+                loss_val = torch.nn.functional.nll_loss(
+                    torch.nn.functional.log_softmax(output, dim=1),
+                    target=torch.cat([d.y for d in data]).to(output.device)
+                )
+
+            # Update test_lost and count
+            test_loss += loss_val.item()
+            count += output.size(0)
+
+            # Update pred and true
+            _, pred1 = output.max(dim=1)
+            if not torch.cuda.device_count() > 1:
+                y = data.y
+            else:
+                y = torch.cat([d.y for d in data]).to(output.device)
+            ag = pred1 == y
+            am = ag.sum()
+            pred += am.item()
+
+            # y_true = torch.cat((y_true, data.y), 0)  # concatentate true values
+            y_true = torch.cat((y_true, y), 0)  # concatentate true values
+            y_pred = torch.cat((y_pred, pred1), 0)  # concatenate predicted values
+            outs = torch.cat((outs, output), 0)  # concatentate output
+
+        # Calculate test_loss and accuracy
+        test_loss = float(test_loss) / count
+        accuracy = float(pred) / count
+
+        # For validation
+        if testing is False:
+            # Create confusion matrix and classification report
+            y_true = y_true.cpu().numpy()  # convert to array and send to cpu
+            y_pred = y_pred.cpu().numpy()  # convert to array and send to cpu
+            conf_mat = confusion_matrix(y_true, y_pred)  # create confusion matrix
+            cls_rpt = classification_report(  # create classification report
+                y_true,
+                y_pred,
+                target_names=classes,
+                labels=np.arange(len(classes)),
+                output_dict=True,
+                zero_division=1,
             )
-            
+            return test_loss, accuracy, conf_mat, cls_rpt
+
+        # For testing
         else:
-            loss_val = torch.nn.functional.nll_loss(
-                torch.nn.functional.log_softmax(output, dim=1),
-                target=torch.cat([d.y for d in data]).to(output.device)
-            )
-
-        # Update test_lost and count
-        test_loss += loss_val.item()
-        count += output.size(0)
-
-        # Update pred and true
-        _, pred1 = output.max(dim=1)
-        if not torch.cuda.device_count() > 1:
-            y = data.y
-        else:
-            y = torch.cat([d.y for d in data]).to(output.device)
-        ag = pred1 == y
-        am = ag.sum()
-        pred += am.item()
-
-        # y_true = torch.cat((y_true, data.y), 0)  # concatentate true values
-        y_true = torch.cat((y_true, y), 0)  # concatentate true values
-        y_pred = torch.cat((y_pred, pred1), 0)  # concatenate predicted values
-        outs = torch.cat((outs, output), 0)  # concatentate output
-
-    # Calculate test_loss and accuracy
-    test_loss = float(test_loss) / count
-    accuracy = float(pred) / count
-
-    # For validation
-    if testing is False:
-        # Create confusion matrix and classification report
-        y_true = y_true.cpu().numpy()  # convert to array and send to cpu
-        y_pred = y_pred.cpu().numpy()  # convert to array and send to cpu
-        conf_mat = confusion_matrix(y_true, y_pred)  # create confusion matrix
-        cls_rpt = classification_report(  # create classification report
-            y_true,
-            y_pred,
-            target_names=classes,
-            labels=np.arange(len(classes)),
-            output_dict=True,
-            zero_division=1,
-        )
-        return test_loss, accuracy, conf_mat, cls_rpt
-
-    # For testing
-    else:
-        # out = torch.nn.functional.log_softmax(output, dim=1)  # softmax of output
-        out = torch.nn.functional.softmax(outs, dim=1)
-        return test_loss, accuracy, out
+            # out = torch.nn.functional.log_softmax(output, dim=1)  # softmax of output
+            out = torch.nn.functional.softmax(outs, dim=1)
+            return test_loss, accuracy, out
     
     
 def test(device, model, test_loader, textio, classes):
