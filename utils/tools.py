@@ -411,7 +411,7 @@ def delete_files(root_dir, glob="*"):
         os.remove(f)
 
 
-def plot_3d(coords):
+def plot_3d(coords, save_plot=False, fig_path=None, dpi=300):
     # Plot parameters
     plt.rcParams["figure.figsize"] = [7.00, 7.00]  # figure size
     plt.rcParams["figure.autolayout"] = True  # auto layout
@@ -424,3 +424,47 @@ def plot_3d(coords):
     z = coords[:, 2]  # z coordinates
     ax.scatter(x, y, z, c=z, alpha=1)  # create a scatter plot
     plt.show()  # show plot
+
+    if save_plot is True:
+        plt.savefig(fig_path, bbox_inches="tight", dpi=dpi)
+    
+    
+def check_multi_gpu():
+    # Check if multiple GPUs are available
+    if torch.cuda.device_count() > 1:
+        multi_gpu = True
+        print("Using Multiple GPUs")
+    else:
+        multi_gpu = False
+        
+    return multi_gpu
+
+
+def create_empty_df():
+    # Create an empty dataframe with specific dtype
+    df = pd.DataFrame(
+        {
+            "Model": pd.Series(dtype="str"),
+            "Point Density": pd.Series(dtype="str"),
+            "Overall Accuracy": pd.Series(dtype="float"),
+            "F1": pd.Series(dtype="float"),
+            "Augmentation": pd.Series(dtype="str"),
+            "Sampling Method": pd.Series(dtype="str"),
+        }
+    )
+
+    return df
+
+
+def variable_df(variables, columns):
+    # Create a dataframe from list of variables
+    df = pd.DataFrame([variables], columns=columns)
+    
+    return df
+
+
+def concat_df(df_list):
+    # Concate multiple dataframes in list
+    df = pd.concat(df_list, ignore_index=True)
+    return df
+
