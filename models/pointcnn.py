@@ -7,11 +7,11 @@ from torch.optim import Adam
 from torch_geometric.nn import XConv, fps, global_mean_pool
 
 
-class PointCNN(nn.Module):
-    def __init__(self, numfeatures, numclasses):
+class Net(nn.Module):
+    def __init__(self, num_classes, num_features):
         super().__init__()
-        self.numfeatures = numfeatures
-        self.numclasses = numclasses
+        self.numfeatures = num_features
+        self.numclasses = num_classes
 
         # First XConv layer
         self.conv1 = XConv(

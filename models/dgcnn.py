@@ -12,7 +12,7 @@ from torch_geometric.nn import (
 )
 
 
-class DGCNN(torch.nn.Module):
+class Net(torch.nn.Module):
     def __init__(self, num_classes, num_features, k=20):
         super().__init__()
 
