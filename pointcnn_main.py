@@ -17,6 +17,7 @@ from utils.tools import (
     delete_files,
     make_confusion_matrix,
     check_multi_gpu,
+    notifi,
 )
 from utils.train import train, test
 
@@ -201,3 +202,4 @@ def main(model_n, pretrained=pretrained, augment=True, num_augs=num_augs):
 # Runtime
 if __name__ == "__main__":
     main(model_n="PointCNN")
+    notifi("Model is Complete", " ")

@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import torch
+from plyer import notification
 from sklearn.metrics import confusion_matrix
 from torch_geometric.data import Data, InMemoryDataset
 
@@ -468,3 +469,7 @@ def concat_df(df_list):
     df = pd.concat(df_list, ignore_index=True)
     return df
 
+
+def notifi(title, message):
+    # Creates a pop-up notification
+    notification.notify(title=title, message=message, timeout=10)
