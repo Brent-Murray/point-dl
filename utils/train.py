@@ -38,7 +38,7 @@ def test_one_epoch(device, model, test_loader, classes, testing=False):
             else:
                 loss_val = torch.nn.functional.nll_loss(
                     torch.nn.functional.log_softmax(output, dim=1),
-                    target=torch.cat([d.y for d in data]).to(output.device)
+                    target=torch.stack([d.y for d in data]).to(output.device)
                 )
 
             # Update test_lost and count
@@ -50,7 +50,7 @@ def test_one_epoch(device, model, test_loader, classes, testing=False):
             if not torch.cuda.device_count() > 1:
                 y = data.y
             else:
-                y = torch.cat([d.y for d in data]).to(output.device)
+                y = torch.stack([d.y for d in data]).to(output.device)
             ag = pred1 == y
             am = ag.sum()
             pred += am.item()
@@ -130,7 +130,7 @@ def train_one_epoch(device, model, train_loader, optimizer, epoch_number):
         else:
             loss_val = torch.nn.functional.nll_loss(
                 torch.nn.functional.log_softmax(output, dim=1),
-                target=torch.cat([d.y for d in data]).to(output.device)
+                target=torch.stack([d.y for d in data]).to(output.device)
             )
 
         # Forward + backward + optimize
@@ -147,7 +147,7 @@ def train_one_epoch(device, model, train_loader, optimizer, epoch_number):
         if not torch.cuda.device_count() > 1:
             y = data.y
         else:
-            y = torch.cat([d.y for d in data]).to(output.device)
+            y = torch.stack([d.y for d in data]).to(output.device)
         ag = pred1 == y
         am = ag.sum()
         pred += am.item()
