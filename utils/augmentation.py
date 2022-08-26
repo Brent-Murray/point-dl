@@ -252,12 +252,14 @@ class AugmentPointCloudsInPickle(InMemoryDataset):
 
     def __init__(
         self,
+        filepath,
         pickle,
         column_name="",
         max_points=200_000,
         samp_meth=None, # one of None, "fps", or "random"
         use_columns=None,
     ):
+        self.filepath = filepath
         self.pickle = pd.read_pickle(pickle)
         self.column_name = column_name
         self.max_points = max_points
@@ -276,10 +278,13 @@ class AugmentPointCloudsInPickle(InMemoryDataset):
 
         # Get Filename
         pickle_idx = self.pickle.iloc[idx : idx + 1]
-        filename = pickle_idx["FilePath"].item()
+        filename = pickle_idx["FileName"].item()
+        
+        # Get file path
+        file = os.path.join(self.filepath, filename)
 
         # Read las/laz file
-        coords, attrs = read_las(filename, get_attributes=True)
+        coords, attrs = read_las(file, get_attributes=True)
 
         # Resample number of points to max_points
         if self.samp_meth is None:
