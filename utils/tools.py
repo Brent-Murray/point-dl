@@ -2,6 +2,7 @@ import glob
 import os
 from datetime import datetime
 from pathlib import Path
+from itertools import cycle, islice
 
 import laspy
 import matplotlib.pyplot as plt
@@ -172,6 +173,7 @@ class PointCloudsInPickle(InMemoryDataset):
 
     def __init__(
         self,
+        filepath,
         pickle,
         column_name="",
         max_points=200_000,
@@ -184,6 +186,7 @@ class PointCloudsInPickle(InMemoryDataset):
             column_name (string): Column name to use as target variable (e.g. "Classification")
             use_columns (list[string]): Column names to add as additional input
         """
+        self.filepath = filepath
         self.pickle = pd.read_pickle(pickle)
         self.column_name = column_name
         self.max_points = max_points
@@ -202,10 +205,13 @@ class PointCloudsInPickle(InMemoryDataset):
 
         # Get file name
         pickle_idx = self.pickle.iloc[idx : idx + 1]
-        filename = pickle_idx["FilePath"].item()
+        filename = pickle_idx["FileName"].item()
+        
+        # Get file path
+        file = os.path.join(self.filepath, filename)
 
         # Read las/laz file
-        coords, attrs = read_las(filename, get_attributes=True)
+        coords, attrs = read_las(file, get_attributes=True)
 
         # Resample number of points to max_points
         if self.samp_meth is None:
@@ -235,7 +241,7 @@ class PointCloudsInPickle(InMemoryDataset):
 
         sample = Data(
             x=torch.from_numpy(x).float(),
-            y=torch.from_numpy(np.array(target)).type(torch.half),
+            y=torch.from_numpy(np.array(target)).type(torch.FloatTensor),
             pos=torch.from_numpy(coords[use_idx, :]).float(),
         )
         if coords.shape[0] < 100:
@@ -279,6 +285,8 @@ def _init_(model_name):
         os.makedirs("checkpoints/" + model_name + "/classification_report/all")
     if not os.path.exists("checkpoints/" + model_name + "/classification_report/best"):
         os.makedirs("checkpoints/" + model_name + "/classification_report/best")
+    if not os.path.exists("checkpoints/" + model_name + "/output"):
+        os.makedirs("checkpoints/" + model_name + "/output")
 
 
 def make_confusion_matrix(
@@ -473,3 +481,13 @@ def concat_df(df_list):
 def notifi(title, message):
     # Creates a pop-up notification
     notification.notify(title=title, message=message, timeout=10)
+    
+    
+def create_comp_csv(y_true, y_pred, classes, filepath):
+    # Create a CSV of the true and predicted species proportions
+    classes = cycle(classes) # cycle classes
+    df = pd.DataFrame({"y_true": y_true, "y_pred": y_pred}) # create dataframe
+    df["SpeciesName"] = list(islice(classes, len(df))) # repeat list of classes
+    species = df.pop("SpeciesName") # remove species name
+    df.insert(0, "SpeciesName", species) # add species name
+    df.to_csv(filepath, index=False) # save to csv
