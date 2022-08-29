@@ -4,7 +4,7 @@ import sys
 import warnings 
 
 import torch
-from models.pointnet2 import Net
+from models import pointnet2, classifier
 from tensorboardX import SummaryWriter
 from torch_geometric.nn import DataParallel
 from torch_geometric.loader import DataLoader, DataListLoader
@@ -156,7 +156,8 @@ def main(model_n, pretrained=pretrained, augment=True, num_augs=num_augs):
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
         # Define Model
-        model = Net(num_classes=len(classes), num_features=len(use_columns))
+        model = pointnet2.Net(num_features=len(use_columns))
+        model = classifier.Classifier(model=model, num_classes=len(classes))
 
         # Load existing model
         if pretrained:
