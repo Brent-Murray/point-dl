@@ -1,8 +1,12 @@
 # point-dl
 Point based deep learning modules and associated tools for classification.
 
-## Contents
-* models
+Contents
+----
+[Models](https://github.com/Brent-Murray/point-dl/tree/main/models)
+| Model | Description|
+| ----- | -----------|
+| [Classifier](https://github.com/Brent-Murray/point-dl/blob/main/models/classifier.py) | Script used for classification using outputs of other models |
   * dgcnn.py - A script with the Dynamic Graph CNN model architecture
   * pointcnn.py - A script with the PointCNN model architecture
   * pointnet2.py - A script with the PointNet++ model architecture
