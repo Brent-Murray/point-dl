@@ -3,13 +3,15 @@ Point based deep learning modules and associated tools for classification.
 
 Contents
 ----
-[Models](https://github.com/Brent-Murray/point-dl/tree/main/models)
+### Models
 | Model | Description|
 | ----- | -----------|
-| [Classifier](https://github.com/Brent-Murray/point-dl/blob/main/models/classifier.py) | Script used for classification using outputs of other models |
-  * dgcnn.py - A script with the Dynamic Graph CNN model architecture
-  * pointcnn.py - A script with the PointCNN model architecture
-  * pointnet2.py - A script with the PointNet++ model architecture
+| [Classifier](https://github.com/Brent-Murray/point-dl/blob/main/models/classifier.py) | A script used for classification using outputs of other models |
+| [DGCNN](https://github.com/Brent-Murray/point-dl/blob/main/models/dgcnn.py) | Dynamic Graph CNN model architecture | 
+| [Dual Model](https://github.com/Brent-Murray/point-dl/blob/main/models/dual_model.py) | A script used to combine the outputs of two models based on defined method |
+| [PointCNN](https://github.com/Brent-Murray/point-dl/blob/main/models/pointcnn.py) | PointCNN model architecture |
+| [PointNet++](https://github.com/Brent-Murray/point-dl/blob/main/models/pointnet2.py) | PointNet++ model architecture |
+
 * utils
   * augmentation.py - A script that performs augmentations on point clouds
   * data_prep.py - A script that splits the dataset and outputs a pickel and csv of the filepaths and species composition
