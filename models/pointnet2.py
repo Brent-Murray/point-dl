@@ -39,9 +39,8 @@ class GlobalSAModule(torch.nn.Module):
     
     
 class Net(torch.nn.Module):
-    def __init__(self, num_classes, num_features):
+    def __init__(self, num_features):
         super().__init__()
-        self.num_classes = num_classes
 
         # SAModules
         # SAModule(ratio, r, nn)
@@ -50,10 +49,6 @@ class Net(torch.nn.Module):
         self.sa2_module = SAModule(0.25, 0.4, MLP([128 + 3, 128, 128, 256]))
         self.sa3_module = GlobalSAModule(MLP([256 + 3, 256, 512, 1024]))
 
-        # MLP
-        self.mlp = MLP(
-            [1024, 512, 256, self.num_classes], dropout=0.5, batch_norm=False
-        )
 
     def forward(self, data):
         sa0_out = (data.x, data.pos, data.batch)
@@ -62,6 +57,4 @@ class Net(torch.nn.Module):
         sa3_out = self.sa3_module(*sa2_out)
         x, pos, batch = sa3_out
 
-        # Return Log Sofmax of output
-        # return self.mlp(x).log_softmax(dim=-1)
-        return self.mlp(x)
+        return x

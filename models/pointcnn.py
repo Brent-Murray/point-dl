@@ -8,37 +8,30 @@ from torch_geometric.nn import XConv, fps, global_mean_pool
 
 
 class Net(nn.Module):
-    def __init__(self, num_classes, num_features):
+    def __init__(self, num_features):
         super().__init__()
         self.numfeatures = num_features
-        self.numclasses = num_classes
 
         # First XConv layer
         self.conv1 = XConv(
-            self.numfeatures, 48, dim=3, kernel_size=8, hidden_channels=32
+            self.numfeatures, 128, dim=3, kernel_size=8, hidden_channels=32
         )
 
         # Second XConv layer
         self.conv2 = XConv(
-            48, 96, dim=3, kernel_size=12, hidden_channels=64, dilation=2
+            128, 256, dim=3, kernel_size=12, hidden_channels=64, dilation=2
         )
 
         # Third XConv layer
         self.conv3 = XConv(
-            96, 192, dim=3, kernel_size=16, hidden_channels=128, dilation=2
+            256, 512, dim=3, kernel_size=16, hidden_channels=128, dilation=2
         )
 
         # Fourth XConv layer
         self.conv4 = XConv(
-            192, 384, dim=3, kernel_size=16, hidden_channels=256, dilation=2
+            512, 1024, dim=3, kernel_size=16, hidden_channels=256, dilation=2
         )
 
-        # Multilayer Perceptrons (MLPs) at the end of the PointCNN
-        self.lin1 = nn.Linear(384, 256)
-        self.lin2 = nn.Linear(256, 128)
-        self.lin3 = nn.Linear(
-            128, self.numclasses
-        )  # change last value for number of classes
 
     def forward(self, data):
         # Get pos and batch
@@ -69,11 +62,4 @@ class Net(nn.Module):
         # Each tree is described in one single point with 384 features
         x = global_mean_pool(x, batch)
 
-        # MLPs at the end with ReLU
-        x = F.relu(self.lin1(x))
-        x = F.relu(self.lin2(x))
-
-        # Dropout: Set randomly to value of zero
-        # x = F.dropout(x, p=0.5, training=self.training)
-        x = F.dropout(x, p=0.5, training=True)
-        return self.lin3(x)
+        return x

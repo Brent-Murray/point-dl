@@ -13,7 +13,7 @@ from torch_geometric.nn import (
 
 
 class Net(torch.nn.Module):
-    def __init__(self, num_classes, num_features, k=20):
+    def __init__(self, num_features, k=20):
         super().__init__()
 
         # Convolution Layers
@@ -24,9 +24,6 @@ class Net(torch.nn.Module):
 
         # Linear Layer
         self.lin1 = Linear(64 + 64 + 128 + 256, 1024)
-
-        # MLP Layer
-        self.mlp = MLP([1024, 512, 256, num_classes], dropout=0.5, batch_norm=False)
 
     def forward(self, data):
         # Get data values
@@ -40,4 +37,4 @@ class Net(torch.nn.Module):
         out = self.lin1(torch.cat([x1, x2, x3, x4], dim=1))
         out = global_max_pool(out, batch)
 
-        return self.mlp(out)
+        return out
