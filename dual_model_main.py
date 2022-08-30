@@ -160,7 +160,7 @@ def main(model_n, pretrained=pretrained, augment=True, num_augs=num_augs):
         model2 = pointcnn.Net(num_features=len(use_columns)) # PointCNN
         
         # Combine Models and Classifiy
-        model = dual_model.DualModel(model1, model2) # dual model
+        model = dual_model.Sum(model1, model2) # dual model
         model = classifier.Classifier(model=model, num_classes=len(classes)) # classify
 
         # Load existing model
@@ -207,5 +207,5 @@ def main(model_n, pretrained=pretrained, augment=True, num_augs=num_augs):
         
 # Runtime
 if __name__ == "__main__":
-    main(model_n="PointNet2")
+    main(model_n="Dual_PN2_PCNN")
     notifi("Model is Complete", " ")
