@@ -19,12 +19,12 @@ Contents
 | [Create Labels](https://github.com/Brent-Murray/point-dl/blob/main/utils/create_labels.py) | A script that creates the labels for associated files |
 | [Resample Point Cloud](https://github.com/Brent-Murray/point-dl/blob/main/utils/resample_point_clouds.py) | A script that resamples point clouds writing them out |
 | [Tools](https://github.com/Brent-Murray/point-dl/blob/main/utils/tools.py) | A script with useful tools for point cloud deep learning and classification |
-| [Train](https://github.com/Brent-Murray/point-dl/blob/main/utils/train.py) | A script that defines the training/validatoin/testing process |
+| [Train](https://github.com/Brent-Murray/point-dl/blob/main/utils/train.py) | A script that defines the training/validation/testing process |
 
 ### Examples
 | Example | Description |
 | ------- | ----------- |
 | [DGCNN Main](https://github.com/Brent-Murray/point-dl/blob/main/dgcnn_main.py) | An example script to run a classification using the Dynamic Graph CNN model |
-| [Dual Model Main](https://github.com/Brent-Murray/point-dl/blob/main/dual_model_main.py) | An example script to run a classificatoin using a dual model |
+| [Dual Model Main](https://github.com/Brent-Murray/point-dl/blob/main/dual_model_main.py) | An example script to run a classification using a dual model |
 | [PointCNN Main](https://github.com/Brent-Murray/point-dl/blob/main/pointcnn_main.py) | An example script to run a classification using the PointCNN model |
 | [PointNet++ Main](https://github.com/Brent-Murray/point-dl/blob/main/pointnet2_main.py) | An example script to run a classification using the PointNet++ model |
