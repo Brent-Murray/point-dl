@@ -11,7 +11,7 @@ import pandas as pd
 import seaborn as sns
 import torch
 from plyer import notification
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, mean_squared_error, r2_score
 from torch_geometric.data import Data, InMemoryDataset
 
 
@@ -491,3 +491,141 @@ def create_comp_csv(y_true, y_pred, classes, filepath):
     species = df.pop("SpeciesName") # remove species name
     df.insert(0, "SpeciesName", species) # add species name
     df.to_csv(filepath, index=False) # save to csv
+    
+    
+def get_stats(df):
+    # Get stats
+    r2 = r2_score(df["y_true"], df["y_pred"])  # r2
+    rmse = np.sqrt(mean_squared_error(df["y_true"], df["y_pred"]))  # rmse
+    df_max = np.max(df["Difference"])  # max difference
+    df_min = np.min(df["Difference"])  # min difference
+    df_std = np.std(df["Difference"])  # std difference
+    df_var = np.var(df["Difference"])  # var difference
+    df_count = np.count_nonzero(df["y_true"])  # count of none 0 y_true
+
+    return pd.Series(
+        dict(
+            r2=r2,
+            rmse=rmse,
+            maximum=df_max,
+            minimum=df_min,
+            std=df_std,
+            var=df_var,
+            count=df_count,
+        )
+    )
+
+
+def get_df_stats(csv, min_dif, max_dif):
+    # Create dataframe
+    df = pd.read_csv(csv)  # read in csv
+    df["Difference"] = df["y_pred"] - df["y_true"]  # difference of y_pred and y_true
+    df["Sum"] = df["y_pred"] + df["y_true"]  # sum of y_pred and y_true
+    df["Between"] = df["Difference"].between(min_dif, max_dif)  # boolean of Difference
+
+    # Print number of True and False values of min and max difference values
+    print("Count")
+    print(df.groupby("Between")["Difference"].count())
+    print()
+
+    # Calculate and print get_stats fpr df
+    print("Stats")
+    df_stats = df.groupby("SpeciesName").apply(get_stats)
+    print(df_stats)
+    print("#################################################")
+    print()
+
+    return df_stats
+
+
+def scatter_plot(csv, point_density, root_dir):
+    df = pd.read_csv(csv)
+    species = df.SpeciesName.unique()
+    for i in species:
+        species_csv = df[df.SpeciesName == i]
+        species_csv.plot.scatter(x="y_pred", y="y_true")
+        plt.title(f"{i}: {point_density}")
+        plt.savefig(os.path.join(root_dir, f"{i}_{point_density}.png"))
+        plt.close()
+
+
+def plot_stats(
+    root_dir,
+    point_densities,
+    model,
+    stats=["r2", "rmse"],
+    save_csv=False,
+    csv_name=None,
+    save_fig=False,
+):
+    # Set Plot Parameters
+    plt.rcParams["figure.figsize"] = [15.00, 7.00]  # figure size
+    plt.rcParams["figure.autolayout"] = True  # auto layout
+    plt.rcParams["figure.facecolor"] = "white"  # facecolor
+
+    dfs_r2 = []
+    dfs_rmse = []
+    for x in point_densities:
+        # Print point density
+        print(f"Point Density: {str(x)}")
+
+        # Get root directory
+        model_output = os.path.join(root_dir, f"{model}_{x}\output")
+
+        # Get CSVs
+        csv = list(Path(model_output).glob("outputs*.csv"))
+
+        # Iterate through CSVs
+        for y in csv:
+            # Create scatter plots
+            scatter_plot(y, x, model_output)
+
+            # Calculate stats
+            csv_stats = get_df_stats(y, -0.05, 0.05)
+
+            # Save csv
+            if save_csv is True:
+                csv_stats.to_csv(
+                    os.path.join(model_output, f"{model}_{x}_{csv_name}"), index=False
+                )
+
+        for stat in stats:
+            # Convert to dataframe
+            csv_item = csv_stats[stat].to_frame()
+
+            # Rename column to point denisty
+            csv_item.rename({stat: x}, axis=1, inplace=True)
+
+            # Append dfs list
+            if stat == "r2":
+                dfs_r2.append(csv_item)
+            if stat == "rmse":
+                dfs_rmse.append(csv_item)
+
+    # Concatenate dataframes
+    df_r2 = pd.concat(dfs_r2, axis=1)
+    df_rmse = pd.concat(dfs_rmse, axis=1)
+
+    # Create Bar Chart for r2
+    df_r2.plot.bar(width=0.9, edgecolor="black")
+    plt.ylabel("r2")
+    plt.grid(color="grey", linestyle="--", linewidth=0.1)
+    plt.legend(title="Point Density")
+    plt.tight_layout()
+
+    # Save Figure
+    if save_fig is True:
+        plt.savefig(os.path.join(root_dir, f"{model}_r2.png"))
+    plt.close()
+
+    # Create Bar Chart for rmse
+    df_rmse.plot.bar(width=0.9, edgecolor="black")
+    plt.ylabel("rmse")
+    plt.grid(color="grey", linestyle="--", linewidth=0.1)
+    plt.legend(title="Point Density")
+    plt.tight_layout()
+
+    # Save Figure
+    if save_fig is True:
+        plt.savefig(os.path.join(root_dir, f"{model}_rmse.png"))
+    plt.close()
