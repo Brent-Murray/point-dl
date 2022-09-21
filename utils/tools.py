@@ -238,6 +238,7 @@ class PointCloudsInPickle(InMemoryDataset):
 
         # impute target
         target = pickle_idx["perc_specs"].item()
+        target = [float(i) for i in target] # convert items in target to float
 
         sample = Data(
             x=torch.from_numpy(x).float(),
