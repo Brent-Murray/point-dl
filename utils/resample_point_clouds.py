@@ -169,8 +169,9 @@ def resample_point_clouds(root_dir, max_points_list, samp_meth, glob="*.laz"):
             
             
 if __name__ == "__main__":
-    train_dataset_path = r"D:\MurrayBrent\data\RMF_ITD\PLOT_LAS\BUF_5M_SC\val"
-    max_points_list = [1024, 2048, 3072, 4096, 5120, 6144, 7168, 8192, 9216, 10240]
+    train_dataset_path = r"D:\MurrayBrent\data\RMF_ITD\plots\plot_laz\val"
+    # max_points_list = [1024, 2048, 3072, 4096, 5120, 6144, 7168, 8192, 9216, 10240]
+    max_points_list = [4096, 5120, 6144, 7168]
     samp_meth = "fps"
     resample_point_clouds(
         root_dir=train_dataset_path,
