@@ -233,18 +233,26 @@ class PointCloudsInPickle(InMemoryDataset):
             for eix, entry in enumerate(self.use_columns):
                 x[:, eix] = attrs[entry][use_idx]
         else:
-            x = coords[use_idx, :]
+            # x = coords[use_idx, :]
+            x = None
         coords = coords - np.mean(coords, axis=0)  # centralize coordinates
 
         # impute target
         target = pickle_idx["perc_specs"].item()
         target = [float(i) for i in target] # convert items in target to float
 
-        sample = Data(
-            x=torch.from_numpy(x).float(),
-            y=torch.from_numpy(np.array(target)).type(torch.FloatTensor),
-            pos=torch.from_numpy(coords[use_idx, :]).float(),
-        )
+        if x is None:
+            sample = Data(
+                x=None,
+                y=torch.from_numpy(np.array(target)).type(torch.FloatTensor),
+                pos=torch.from_numpy(coords[use_idx, :]).float(),
+            )
+        else:
+            sample = Data(
+                x=torch.from_numpy(x).float(),
+                y=torch.from_numpy(np.array(target)).type(torch.FloatTensor),
+                pos=torch.from_numpy(coords[use_idx, :]).float(),
+            )
         if coords.shape[0] < 100:
             return None
         return sample
@@ -263,7 +271,7 @@ class IOStream:
         self.f.flush  # flush file
 
     def close(self):
-        sefl.f.close()  # close file
+        self.f.close()  # close file
 
 
 def _init_(model_name):
@@ -466,9 +474,9 @@ def create_empty_df():
     return df
 
 
-def variable_df(variables, columns):
+def variable_df(variables, col_names):
     # Create a dataframe from list of variables
-    df = pd.DataFrame([variables], columns=columns)
+    df = pd.DataFrame([variables], columns=col_names)
     
     return df
 

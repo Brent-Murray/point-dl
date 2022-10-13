@@ -70,7 +70,7 @@ def point_removal(coords, x=None):
     # Remove random values
     aug_coords = coords[idx, :]  # remove coords
     if x is None:  # remove x
-        aug_x = aug_coords
+        aug_x = None
     else:
         aug_x = x[idx, :]
 
@@ -87,7 +87,7 @@ def random_noise(coords, dim, x=None):
             0, random_noise_sd, size=(np.shape(coords)[0], 3)
         )
         if x is None:
-            aug_x = aug_coords
+            aug_x = None
         else:
             aug_x = x + np.random.normal(
                 0, random_noise_sd, size=(np.shape(x)[0], dim)
@@ -97,7 +97,7 @@ def random_noise(coords, dim, x=None):
             0, random_noise_sd, size=(np.shape(coords)[0], 3)
         )
         if x is None:
-            aug_x = aug_coords
+            aug_x = None
         else:
             aug_x = x - np.random.normal(
                 0, random_noise_sd, size=(np.shape(x)[0], dim)
@@ -111,8 +111,11 @@ def random_noise(coords, dim, x=None):
     )
     aug_coords = aug_coords[use_idx, :]  # get random points
     aug_coords = np.append(coords, aug_coords, axis=0)  # add points
-    aug_x = aug_x[use_idx, :]  # get random point values
-    aug_x = np.append(x, aug_x, axis=0)  # add random point values # ADDED axis=0
+    if x is None:
+        aug_x = None
+    else:
+        aug_x = aug_x[use_idx, :]  # get random point values
+        aug_x = np.append(x, aug_x, axis=0)  # add random point values # ADDED axis=0
 
     return aug_coords, aug_x
 
@@ -219,7 +222,8 @@ class AugmentPointCloudsInFiles(InMemoryDataset):
             for eix, entry in enumerate(self.use_columns):
                 x[:, eix] = attrs[entry][use_idx]
         else:
-            x = coords[use_idx, :]
+            # x = coords[use_idx, :]
+            x = None
 
         # Get coords
         coords = coords[use_idx, :]
@@ -306,7 +310,8 @@ class AugmentPointCloudsInPickle(InMemoryDataset):
             for eix, entry in enumerate(self.use_columns):
                 x[:, eix] = attrs[entry][use_idx]
         else:
-            x = coords[use_idx, :]
+            # x = coords[use_idx, :]
+            x = None
 
         # Get coords
         coords = coords[use_idx, :]
@@ -321,11 +326,18 @@ class AugmentPointCloudsInPickle(InMemoryDataset):
         target = pickle_idx["perc_specs"].item()
         target = [float(i) for i in target] # convert items in target to float
 
-        sample = Data(
-            x=torch.from_numpy(x).float(),
-            y=torch.from_numpy(np.array(target)).float(),
-            pos=torch.from_numpy(coords).float(),
-        )
+        if x is None:
+            sample = Data(
+                x=None,
+                y=torch.from_numpy(np.array(target)).float(),
+                pos=torch.from_numpy(coords).float(),
+            )
+        else:
+            sample = Data(
+                x=torch.from_numpy(x).float(),
+                y=torch.from_numpy(np.array(target)).float(),
+                pos=torch.from_numpy(coords).float(),
+            )
         if coords.shape[0] < 100:
             return None
         return sample
