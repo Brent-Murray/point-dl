@@ -59,12 +59,12 @@ def rotate_points(coords):
     return aug_coords
 
 
-def point_removal(coords, x=None):
+def point_removal(coords, n, x=None):
     # Get list of ids
     idx = list(range(np.shape(coords)[0]))
     random.shuffle(idx)  # shuffle ids
     idx = np.random.choice(
-        idx, random.randint(round(len(idx) * 0.9), len(idx)), replace=False
+        idx, n, replace=False
     )  # pick points randomly removing up to 10% of points
 
     # Remove random values
@@ -77,7 +77,7 @@ def point_removal(coords, x=None):
     return aug_coords, aug_x
 
 
-def random_noise(coords, dim, x=None):
+def random_noise(coords, dim, n, x=None):
     # Random standard deviation value
     random_noise_sd = np.random.uniform(0.01, 0.025)
 
@@ -104,11 +104,7 @@ def random_noise(coords, dim, x=None):
             )  # added [0] and dim
 
     # Randomly choose up to 10% of augmented noise points
-    use_idx = np.random.choice(
-        aug_coords.shape[0],
-        random.randint(0, round(len(aug_coords) * 0.1)),
-        replace=False,
-    )
+    use_idx = np.random.choice(aug_coords.shape[0], n, replace=False,)
     aug_coords = aug_coords[use_idx, :]  # get random points
     aug_coords = np.append(coords, aug_coords, axis=0)  # add points
     if x is None:
@@ -230,8 +226,9 @@ class AugmentPointCloudsInFiles(InMemoryDataset):
         coords = coords - np.mean(coords, axis=0)  # centralize coordinates
 
         # Augmentation
-        coords, x = point_removal(coords, x)
-        coords, x = random_noise(coords, len(self.use_columns), x)
+        n = random.randin(round(len(coords)* 0.9), len(coords))
+        coords, x = point_removal(coords, n, x)
+        coords, x = random_noise(coords, len(self.use_columns), n=(len(coords)-n), x=x)
         coords = rotate_points(coords)
 
         # impute target
@@ -318,8 +315,9 @@ class AugmentPointCloudsInPickle(InMemoryDataset):
         coords = coords - np.mean(coords, axis=0)  # centralize coordinates
 
         # Augmentation
-        coords, x = point_removal(coords, x)
-        coords, x = random_noise(coords, len(self.use_columns), x)
+        n = random.randin(round(len(coords)* 0.9), len(coords))
+        coords, x = point_removal(coords, n, x)
+        coords, x = random_noise(coords, len(self.use_columns), n=(len(coords)-n), x=x)
         coords = rotate_points(coords)
 
         # Get Target
