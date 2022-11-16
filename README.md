@@ -1,30 +1,35 @@
 # point-dl
-Point based deep learning modules and associated tools for classification.
+Point based deep learning modules and associated tools for classification. There are [Pytorch Geometric](https://github.com/Brent-Murray/point-dl/tree/main/PyG) based models/tools as well as [Pytorch](https://github.com/Brent-Murray/point-dl/tree/main/Pytorch) based ones.
 
 Contents
 ----
+### Pytorch Geometric
 ### Models
-| Model | Description |
-| ----- | ----------- |
-| [Classifier](https://github.com/Brent-Murray/point-dl/blob/main/models/classifier.py) | A script used for classification using outputs of other models |
-| [DGCNN](https://github.com/Brent-Murray/point-dl/blob/main/models/dgcnn.py) | Dynamic Graph CNN model architecture | 
-| [Dual Model](https://github.com/Brent-Murray/point-dl/blob/main/models/dual_model.py) | A script used to combine the outputs of two models based on defined method |
-| [PointCNN](https://github.com/Brent-Murray/point-dl/blob/main/models/pointcnn.py) | PointCNN model architecture |
-| [PointNet++](https://github.com/Brent-Murray/point-dl/blob/main/models/pointnet2.py) | PointNet++ model architecture |
+| Model | Description | Reference |
+| ----- | ----------- | --------- |
+| [Classifier](https://github.com/Brent-Murray/point-dl/blob/main/PyG/models/classifier.py) | A script used for classification using outputs of other models | NA |
+| [DGCNN](https://github.com/Brent-Murray/point-dl/blob/main/PyG/models/dgcnn.py) | Dynamic Graph CNN model architecture | [(Wang et al., 2019)](https://arxiv.org/abs/1801.07829) |
+| [Dual Model](https://github.com/Brent-Murray/point-dl/blob/main/PyG/models/dual_model.py) | A script used to combine the outputs of two models based on defined method | NA |
+| [PointCNN](https://github.com/Brent-Murray/point-dl/blob/main/PyG/models/pointcnn.py) | PointCNN model architecture | [(Hell et al., 2022)](https://link.springer.com/article/10.1007/s41064-022-00200-4) |
+| [PointNet++](https://github.com/Brent-Murray/point-dl/blob/main/PyG/models/pointnet2.py) | PointNet++ model architecture | [(Qi et al., 2017)](https://arxiv.org/abs/1706.02413) |
 
 ### Utils
 | Util | Description |
 | ---- | ----------- |
-| [Augmentation](https://github.com/Brent-Murray/point-dl/blob/main/utils/augmentation.py) | A script that performes augmentations on point clouds |
-| [Create Labels](https://github.com/Brent-Murray/point-dl/blob/main/utils/create_labels.py) | A script that creates the labels for associated files |
-| [Resample Point Cloud](https://github.com/Brent-Murray/point-dl/blob/main/utils/resample_point_clouds.py) | A script that resamples point clouds writing them out |
-| [Tools](https://github.com/Brent-Murray/point-dl/blob/main/utils/tools.py) | A script with useful tools for point cloud deep learning and classification |
-| [Train](https://github.com/Brent-Murray/point-dl/blob/main/utils/train.py) | A script that defines the training/validation/testing process |
+| [Augmentation](https://github.com/Brent-Murray/point-dl/blob/main/PyG/utils/augmentation.py) | A script that performes augmentations on point clouds |
+| [Tools](https://github.com/Brent-Murray/point-dl/blob/main/PyG/utils/tools.py) | A script with useful tools for point cloud deep learning and classification |
+| [Train](https://github.com/Brent-Murray/point-dl/blob/main/PyG/utils/train.py) | A script that defines the training/validation/testing process |
+| [Train Comp](https://github.com/Brent-Murray/point-dl/blob/main/PyG/utils/train_comp.py) | A script that trains the models for composition |
 
 ### Examples
 | Example | Description |
 | ------- | ----------- |
-| [DGCNN Main](https://github.com/Brent-Murray/point-dl/blob/main/dgcnn_main.py) | An example script to run a classification using the Dynamic Graph CNN model |
-| [Dual Model Main](https://github.com/Brent-Murray/point-dl/blob/main/dual_model_main.py) | An example script to run a classification using a dual model |
-| [PointCNN Main](https://github.com/Brent-Murray/point-dl/blob/main/pointcnn_main.py) | An example script to run a classification using the PointCNN model |
-| [PointNet++ Main](https://github.com/Brent-Murray/point-dl/blob/main/pointnet2_main.py) | An example script to run a classification using the PointNet++ model |
+| [Comp Main](https://github.com/Brent-Murray/point-dl/blob/main/PyG/comp_main.py) | The main script that runs models for species composition |
+| [Dual Model Main](https://github.com/Brent-Murray/point-dl/blob/main/PyG/dual_model_main.py) | The main script to run a dual model for species composition |
+| [HP Optim](https://github.com/Brent-Murray/point-dl/blob/main/PyG/hp_optim.py) | Script that tunes hyper parameters using Optuna |
+
+### Pytorch
+### Models
+| Model | Description |
+| ----- | ----------- |
+| 
