@@ -5,13 +5,13 @@ Contents
 ----
 ### Pytorch Geometric
 ### Models
-| Model | Description |
-| ----- | ----------- |
-| [Classifier](https://github.com/Brent-Murray/point-dl/blob/main/PyG/models/classifier.py) | A script used for classification using outputs of other models |
-| [DGCNN](https://github.com/Brent-Murray/point-dl/blob/main/PyG/models/dgcnn.py) | Dynamic Graph CNN model architecture | 
-| [Dual Model](https://github.com/Brent-Murray/point-dl/blob/main/PyG/models/dual_model.py) | A script used to combine the outputs of two models based on defined method |
-| [PointCNN](https://github.com/Brent-Murray/point-dl/blob/main/PyG/models/pointcnn.py) | PointCNN model architecture |
-| [PointNet++](https://github.com/Brent-Murray/point-dl/blob/main/PyG/models/pointnet2.py) | PointNet++ model architecture |
+| Model | Description | Reference |
+| ----- | ----------- | --------- |
+| [Classifier](https://github.com/Brent-Murray/point-dl/blob/main/PyG/models/classifier.py) | A script used for classification using outputs of other models | NA |
+| [DGCNN](https://github.com/Brent-Murray/point-dl/blob/main/PyG/models/dgcnn.py) | Dynamic Graph CNN model architecture | [(Wang et al., 2019)](https://arxiv.org/abs/1801.07829) |
+| [Dual Model](https://github.com/Brent-Murray/point-dl/blob/main/PyG/models/dual_model.py) | A script used to combine the outputs of two models based on defined method | NA |
+| [PointCNN](https://github.com/Brent-Murray/point-dl/blob/main/PyG/models/pointcnn.py) | PointCNN model architecture | [(Hell et al., 2022)](https://link.springer.com/article/10.1007/s41064-022-00200-4) |
+| [PointNet++](https://github.com/Brent-Murray/point-dl/blob/main/PyG/models/pointnet2.py) | PointNet++ model architecture | [(Qi et al., 2017)](https://arxiv.org/abs/1706.02413) |
 
 ### Utils
 | Util | Description |
@@ -27,3 +27,9 @@ Contents
 | [Comp Main](https://github.com/Brent-Murray/point-dl/blob/main/PyG/comp_main.py) | The main script that runs models for species composition |
 | [Dual Model Main](https://github.com/Brent-Murray/point-dl/blob/main/PyG/dual_model_main.py) | The main script to run a dual model for species composition |
 | [HP Optim](https://github.com/Brent-Murray/point-dl/blob/main/PyG/hp_optim.py) | Script that tunes hyper parameters using Optuna |
+
+### Pytorch
+### Models
+| Model | Description |
+| ----- | ----------- |
+| 
