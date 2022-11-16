@@ -30,6 +30,19 @@ Contents
 
 ### Pytorch
 ### Models
-| Model | Description |
-| ----- | ----------- |
-| 
+| Model | Description | Reference |
+| ----- | ----------- | --------- |
+| [Point Augment](https://github.com/Brent-Murray/point-dl/tree/main/Pytorch/models/PointAugment) | Adaptation of the Point Augment model (see below for contents)| [(Li et al., 2020)](https://arxiv.org/abs/2002.10876) |
+| [DGCNN](https://github.com/Brent-Murray/point-dl/blob/main/Pytorch/models/dgcnn.py) | A Pytorch implementation of DGCNN | [(Wang et al., 2019)](https://arxiv.org/abs/1801.07829) |
+| [DGCNN Extended](https://github.com/Brent-Murray/point-dl/blob/main/Pytorch/models/dgcnn_extended.py) | An extended version of the Pytorch DGCNN model| NA |
+
+### Point Augment
+| Folder | File | Description |
+| ------ | ---- | ----------- |
+| Augment | [Augmentor](https://github.com/Brent-Murray/point-dl/blob/main/Pytorch/models/PointAugment/augment/augmentor.py) | The augmentor (generator) model |
+| Common | [Loss Utils](https://github.com/Brent-Murray/point-dl/blob/main/Pytorch/models/PointAugment/common/loss_utils.py) | The loss functions for the adapted model |
+| Models | [DGCNN](https://github.com/Brent-Murray/point-dl/blob/main/Pytorch/models/PointAugment/models/dgcnn.py) | Pytorch implementation of DGCNN |
+| Utils | [Augmentation](https://github.com/Brent-Murray/point-dl/blob/main/Pytorch/models/PointAugment/utils/augmentation.py) | A script that performes augmentations on point clouds |
+| Utils | [Tools](https://github.com/Brent-Murray/point-dl/blob/main/Pytorch/models/PointAugment/utils/tools.py) | A script with useful tools for point cloud deep learning and classification |
+| Utils | [Train](https://github.com/Brent-Murray/point-dl/blob/main/Pytorch/models/PointAugment/utils/train.py) | A script that defines the training/validation/testing process |
+| Point Augment | [Main](https://github.com/Brent-Murray/point-dl/blob/main/Pytorch/models/PointAugment/main.py) | The main scipt that runs the model |
