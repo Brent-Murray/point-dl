@@ -3,7 +3,7 @@ Point based deep learning modules and associated tools for classification. There
 
 Contents
 ----
-## Pytorch Geometric
+### Pytorch Geometric
 ### Models
 | Model | Description |
 | ----- | ----------- |
