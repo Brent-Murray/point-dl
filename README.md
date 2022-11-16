@@ -3,7 +3,8 @@ Point based deep learning modules and associated tools for classification. There
 
 Contents
 ----
-### Pytorch Geometric Models
+## Pytorch Geometric
+### Models
 | Model | Description |
 | ----- | ----------- |
 | [Classifier](https://github.com/Brent-Murray/point-dl/blob/main/PyG/models/classifier.py) | A script used for classification using outputs of other models |
