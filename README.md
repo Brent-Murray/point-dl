@@ -48,6 +48,7 @@ Contents
 | Point Augment | [Main](https://github.com/Brent-Murray/point-dl/blob/main/Pytorch/models/PointAugment/main.py) | The main scipt that runs the model |
 
 ### Utils
+| Util | Description |
 | ---- | ----------- |
 | [Augmentation](https://github.com/Brent-Murray/point-dl/blob/main/Pytorch/utils/augmentation.py) | A script that performes augmentations on point clouds |
 | [Tools](https://github.com/Brent-Murray/point-dl/blob/main/Pytorch/utils/tools.py) | A script with useful tools for point cloud deep learning and classification |
