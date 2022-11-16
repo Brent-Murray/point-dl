@@ -57,3 +57,9 @@ Contents
 | ------- | ----------- |
 | [HP Tuner](https://github.com/Brent-Murray/point-dl/blob/main/Pytorch/hp_tuner.py) | Script that tunes hyperparameters using Optuna |
 | [Main](https://github.com/Brent-Murray/point-dl/blob/main/Pytorch/main.py) | The main script that runs models |
+
+### Tools
+| Script | Description |
+| ------ | ----------- |
+| [Create Labels](https://github.com/Brent-Murray/point-dl/blob/main/Tools/create_labels.py) | Creates the truth labels for every point cloud |
+| [Resample Point Clouds](https://github.com/Brent-Murray/point-dl/blob/main/Tools/resample_point_clouds.py) | Resamples point clouds based on different sampling methods |
