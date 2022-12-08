@@ -20,7 +20,7 @@ def calc_loss(y_true, y_pred):
 
 
 def d_loss(y_true, y_pred, aug_y_pred, w=0.5):
-    """Loss function for the discriminator"""
+    """Loss function for the discriminator (classifier)"""
     LeakyReLU = nn.LeakyReLU(0.0)
     y_loss = calc_loss(y_true, y_pred)  # loss for true
     aug_y_loss = calc_loss(y_true, aug_y_pred)  # loss for augmented

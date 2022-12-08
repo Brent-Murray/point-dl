@@ -66,19 +66,19 @@ if __name__ == "__main__":
         "exp_name": "dgcnn_pointaugment_7168",  # experiment name
         "model": "dgcnn",  # model
         "batch_size": 10,  # batch size
-        "train_path": r"D:\MurrayBrent\data\RMF_ITD\plots\plot_laz\train\trainingsets\fps",
-        "train_pickle": r"D:\MurrayBrent\data\RMF_ITD\plots\plot_laz\train\plot_comp.pkl",
-        "test_path": r"D:\MurrayBrent\data\RMF_ITD\plots\plot_laz\val\trainingsets\fps",
-        "test_pickle": r"D:\MurrayBrent\data\RMF_ITD\plots\plot_laz\val\plot_comp.pkl",
+        "train_path": r"D:\MurrayBrent\data\RMF_ITD\plots\plot_laz\train\datasets\fps",
+        "train_pickle": r"D:\MurrayBrent\data\RMF_ITD\plots\plot_laz\train\plots_comp.pkl",
+        "test_path": r"D:\MurrayBrent\data\RMF_ITD\plots\plot_laz\val\datasets\fps",
+        "test_pickle": r"D:\MurrayBrent\data\RMF_ITD\plots\plot_laz\val\plots_comp.pkl",
         "augment": True, # augment
         "n_augs": 5, # number of augmentations
-        "classes": ["BF", "BW", "CE", "LA", "PT", "PJ", "SB"],  # classes
+        "classes": ['BF', 'BW', 'CE', 'LA', 'PT', 'PJ', 'PO', 'SB', 'SW'],  # classes
         "n_gpus": torch.cuda.device_count(),  # number of gpus
         "epochs": 300,  # total epochs
         "optimizer_a": "adam",  # augmentor optimizer,
         "optimizer_c": "adam",  # classifier optimizer
-        "lr_a": 1e-6,  # augmentor learning rate
-        "lr_c": 1e-6,  # classifier learning rate
+        "lr_a": 1e-5,  # augmentor learning rate
+        "lr_c": 1e-5,  # classifier learning rate
         "adaptive_lr": True,  # adaptive learning rate
         "patience": 20,  # patience
         "step_size": 30,  # step size
