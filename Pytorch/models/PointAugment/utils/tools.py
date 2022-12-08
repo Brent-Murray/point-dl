@@ -6,6 +6,7 @@ from itertools import cycle, islice
 
 import laspy
 import matplotlib.pyplot as plt
+from matplotlib.colors import ListedColormap
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -158,6 +159,9 @@ class PointCloudsInPickle(Dataset):
 
         # impute target
         target = pickle_idx["perc_specs"].item()
+        target = target.replace("[", "")
+        target = target.replace("]", "")
+        target = target.split(",")
         target = [float(i) for i in target]  # convert items in target to float
 
         # if x is None:
@@ -180,6 +184,38 @@ class PointCloudsInPickle(Dataset):
         return coords, target
 
 
+def write_las(outpoints, outfilepath, attribute_dict={}):
+    """
+    :param outpoints: 3D array of points to be written to output file
+    :param outfilepath: specification of output file (format: las or laz)
+    :param attribute_dict: dictionary of attributes (key: name of attribute; value: 1D array of attribute values in order of points in 'outpoints'); if not specified, dictionary is empty and nothing is added
+    :return: None
+    """
+    import laspy
+
+    hdr = laspy.LasHeader(version="1.4", point_format=6)
+    hdr.x_scale = 0.00025
+    hdr.y_scale = 0.00025
+    hdr.z_scale = 0.00025
+    mean_extent = np.mean(outpoints, axis=0)
+    hdr.x_offset = int(mean_extent[0])
+    hdr.y_offset = int(mean_extent[1])
+    hdr.z_offset = int(mean_extent[2])
+
+    las = laspy.LasData(hdr)
+
+    las.x = outpoints[0]
+    las.y = outpoints[1]
+    las.z = outpoints[2]
+    for key, vals in attribute_dict.items():
+        try:
+            las[key] = vals
+        except:
+            las.add_extra_dim(laspy.ExtraBytesParams(name=key, type=type(vals[0])))
+            las[key] = vals
+
+    las.write(outfilepath)
+    
 class IOStream:
     # Adapted from https://github.com/vinits5/learning3d/blob/master/examples/train_pointnet.py
     def __init__(self, path):
@@ -204,20 +240,10 @@ def _init_(model_name):
         os.makedirs("checkpoints/" + model_name)
     if not os.path.exists("checkpoints/" + model_name + "/models"):
         os.makedirs("checkpoints/" + model_name + "/models")
-    if not os.path.exists("checkpoints/" + model_name + "/confusion_matrix"):
-        os.makedirs("checkpoints/" + model_name + "/confusion_matrix")
-    if not os.path.exists("checkpoints/" + model_name + "/confusion_matrix/all"):
-        os.makedirs("checkpoints/" + model_name + "/confusion_matrix/all")
-    if not os.path.exists("checkpoints/" + model_name + "/confusion_matrix/best"):
-        os.makedirs("checkpoints/" + model_name + "/confusion_matrix/best")
-    if not os.path.exists("checkpoints/" + model_name + "/classification_report"):
-        os.makedirs("checkpoints/" + model_name + "/classification_report")
-    if not os.path.exists("checkpoints/" + model_name + "/classification_report/all"):
-        os.makedirs("checkpoints/" + model_name + "/classification_report/all")
-    if not os.path.exists("checkpoints/" + model_name + "/classification_report/best"):
-        os.makedirs("checkpoints/" + model_name + "/classification_report/best")
     if not os.path.exists("checkpoints/" + model_name + "/output"):
         os.makedirs("checkpoints/" + model_name + "/output")
+    if not os.path.exists("checkpoints/" + model_name + "/output/laz"):
+        os.makedirs("checkpoints/" + model_name + "/output/laz")
 
 
 def make_confusion_matrix(
@@ -363,10 +389,38 @@ def plot_3d(coords, save_plot=False, fig_path=None, dpi=300):
     y = coords[:, 1]  # y coordinates
     z = coords[:, 2]  # z coordinates
     ax.scatter(x, y, z, c=z, alpha=1)  # create a scatter plot
-    plt.show()  # show plot
+    # plt.show()  # show plot
 
     if save_plot is True:
         plt.savefig(fig_path, bbox_inches="tight", dpi=dpi)
+        
+
+def plot_2d(coords, out_name=None, save_fig=True):
+    # Plot parameters
+    plt.rcParams["figure.figsize"] = [7.00, 7.00]  # figure size
+    plt.rcParams["figure.autolayout"] = True  # auto layout
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+
+    # Remove axes
+    ax.set_axis_off()
+
+    # Create CMAP
+    a = 0.75
+    my_cmap = plt.cm.rainbow(np.arange(plt.cm.rainbow.N))
+    my_cmap[:, 0:3] *= a
+    my_cmap = ListedColormap(my_cmap)
+
+    # Get coordinates
+    x = coords[0]  # x coordinates
+    y = coords[1]  # y coordinates
+    z = coords[2]  # z coordinates
+    ax.scatter(x, z, s=3, c=z, cmap=my_cmap, alpha=1)  # create a scatter plot
+
+    if save_fig is True and out_name is not None:
+        plt.savefig(out_name, bbox_inches="tight", dpi=600)
+    plt.close()
     
     
 def check_multi_gpu(n_gpus):
