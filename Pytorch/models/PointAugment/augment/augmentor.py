@@ -129,7 +129,7 @@ class Augmentor(nn.Module):
         pt = raw_pt.transpose(2, 1).contiguous()
 
         p1 = random.uniform(0, 1)
-        possi = 0.5
+        possi = 0.0
         if p1 > possi:
             pt = torch.bmm(pt, rotation).transpose(1, 2).contiguous()
         else:
