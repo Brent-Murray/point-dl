@@ -195,6 +195,9 @@ class AugmentPointCloudsInPickle(Dataset):
 
         # Get Target
         target = pickle_idx["perc_specs"].item()
+        target = target.replace("[", "")
+        target = target.replace("]", "")
+        target = target.split(",")
         target = [float(i) for i in target] # convert items in target to float
 
         coords = torch.from_numpy(coords).float()
