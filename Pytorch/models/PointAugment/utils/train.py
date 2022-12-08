@@ -1,4 +1,5 @@
 import os
+import random
 import warnings
 
 
@@ -15,17 +16,9 @@ from sklearn.metrics import r2_score
 from torch.optim.lr_scheduler import ReduceLROnPlateau, StepLR
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-from utils.tools import create_comp_csv, delete_files
+from utils.tools import create_comp_csv, delete_files, variable_df, write_las, plot_3d, plot_2d
 
 warnings.filterwarnings("ignore")
-
-
-# Notes
-# Adapt augment to fit shape of data
-# Change noise to augment pointclouds instead of random
-# Fix loss functions
-#    - make sure to include original and augmented point clouds not just output tensors
-#    - make output dimensions suitable for dgcnn
 
 
 def train(params, io, train_loader, test_loader):
@@ -92,6 +85,13 @@ def train(params, io, train_loader, test_loader):
     # Set initial triggertimes
     triggertimes = 0
 
+    epoch_list = []
+    training_losses_a = []
+    training_losses_c = []
+    training_r2s = []
+    validation_losses = []
+    validation_r2s = []
+    
     # Iterate through number of epochs
     for epoch in tqdm(
         range(params["epochs"]), desc="Model Total: ", leave=False, colour="red"
@@ -101,6 +101,10 @@ def train(params, io, train_loader, test_loader):
         train_loss_a = 0.0
         train_loss_c = 0.0
         count = 0
+        true_pred = []
+        aug_pred = []
+        train_true = []
+        j=0
 
         for data, label in tqdm(
             train_loader, desc="Training Total: ", leave=False, colour="cyan"
@@ -150,7 +154,52 @@ def train(params, io, train_loader, test_loader):
             train_loss_a += aug_loss.item()
             train_loss_c += cls_loss.item()
             count = batch_size
+            
+            # Append true/pred
+            label_np = label.cpu().numpy()
+            if label_np.ndim == 2:
+                train_true.append(label_np)
+            else:
+                label_np = label_np[np.newaxis, :]
+                train_true.append(label_np)
 
+            aug_np = F.softmax(out_aug, dim=1)
+            aug_np = aug_np.detach().cpu().numpy()
+            if aug_np.ndim == 2:
+                aug_pred.append(aug_np)
+            else:
+                aug_np = aug_np[np.newaxis, :]
+                aug_pred.append(aug_np)
+            
+            true_np = F.softmax(out_true, dim=1)
+            true_np = true_np.detach().cpu().numpy()
+            if true_np.ndim ==2:
+                true_pred.append(true_np)
+            else:
+                true_np = true_np[np.newaxis, :]
+                true_pred.append(true_np)
+            if epoch + 1 in [1, 50, 100, 150, 200, 250, 300]:
+                if random.random() > 0.99:
+                    aug_pc_np = aug_pc.detach().cpu().numpy()
+                    true_pc_np = data.detach().cpu().numpy()
+                    try:
+                        write_las(aug_pc_np[1], f"checkpoints/{exp_name}/output/laz/epoch{epoch + 1}_pc{j}_aug.laz")
+                        write_las(true_pc_np[1], f"checkpoints/{exp_name}/output/laz/epoch{epoch + 1}_pc{j}_true.laz")
+                        j+=1
+                    except:
+                        j+=1
+
+        # Concatenate true/pred
+        train_true = np.concatenate(train_true)
+        aug_pred = np.concatenate(aug_pred)
+        true_pred = np.concatenate(true_pred)
+        
+        # Calculate R2's
+        aug_r2 = r2_score(train_true.flatten(), aug_pred.flatten().round(2))
+        true_r2 = r2_score(train_true.flatten(), true_pred.flatten().round(2))
+        
+        train_r2 = float(aug_r2 + true_r2) / 2
+        
         # Get average loss'
         train_loss_a = float(train_loss_a) / count
         train_loss_c = float(train_loss_c) / count
@@ -202,20 +251,28 @@ def train(params, io, train_loader, test_loader):
                     pred_np = pred_np[np.newaxis, :]
                     test_pred.append(pred_np)
 
+                
             # Concatenate true/pred
             test_true = np.concatenate(test_true)
             test_pred = np.concatenate(test_pred)
 
             # Calculate R2
-            r2 = r2_score(test_true.flatten(), test_pred.flatten().round(2))
+            val_r2 = r2_score(test_true.flatten(), test_pred.flatten().round(2))
 
             # get average test loss
             test_loss = float(test_loss) / count
 
         # print and save losses and r2
         io.cprint(
-            f"Epoch: {epoch + 1}, Training - Augmentor Loss: {train_loss_a}, Training - Classifier Loss: {train_loss_c}, Validation Loss: {test_loss}, R2: {r2}"
+            f"Epoch: {epoch + 1}, Training - Augmentor Loss: {train_loss_a}, Training - Classifier Loss: {train_loss_c}, Training R2: {train_r2}, Validation Loss: {test_loss}, R2: {val_r2}"
         )
+        
+        epoch_list.append((epoch + 1))
+        training_losses_a.append(train_loss_a)
+        training_losses_c.append(train_loss_c)
+        training_r2s.append(train_r2)
+        validation_losses.append(test_loss)
+        validation_r2s.append(val_r2)
 
         # Save Best Model
         if test_loss < best_test_loss:
@@ -253,7 +310,11 @@ def train(params, io, train_loader, test_loader):
                 io.cprint(
                     f"LR: {scheduler2.optimizer.param_groups[0]['lr']}, Scheduler: Step"
                 )
-                
+    # Write output loss' and r2's to csv
+    variables = [epoch_list, training_losses_a, training_losses_c, training_r2s, validation_losses, validation_r2s]
+    col_names = ["epoch", "aug_loss", "class_loss", "train_r2", "val_loss", "val_r2"]
+    loss_r2_df = variable_df(variables, col_names)
+    loss_r2_df.to_csv(f"checkpoints/{exp_name}/loss_r2.csv")                               
 
 def test(params, io, test_loader):
     device = torch.device("cuda" if params["cuda"] else "cpu")
