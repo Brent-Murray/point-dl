@@ -75,8 +75,10 @@ def train(params, io, train_loader, test_loader):
 
     # Adaptive Learning
     if params["adaptive_lr"] is True:
-        scheduler1 = ReduceLROnPlateau(optimizer_c, "min", patience=params["patience"])
-        scheduler2 = StepLR(optimizer_c, step_size=params["step_size"], gamma=0.1)
+        scheduler1_c = ReduceLROnPlateau(optimizer_c, "min", patience=params["patience"])
+        scheduler2_c = StepLR(optimizer_c, step_size=params["step_size"], gamma=0.1)
+        scheduler1_a = ReduceLROnPlateau(optimizer_a, "min", patience=params["patience"])
+        scheduler2_a = StepLR(optimizer_a, step_size=params["step_size"], gamma=0.1)
         change = 0
 
     # Set initial best test loss
@@ -296,19 +298,27 @@ def train(params, io, train_loader, test_loader):
         if params["adaptive_lr"] is True:
             if test_loss > best_test_loss:
                 triggertimes += 1
-                if triggertimes >= params["patience"]:
+                if triggertimes > params["patience"]:
                     change = 1
             else:
                 triggertimes = 0
             if change == 0:
-                scheduler1.step(test_loss)
+                scheduler1_a.step(test_loss)
+                scheduler1_c.step(test_loss)
                 io.cprint(
-                    f"LR: {scheduler1.optimizer.param_groups[0]['lr']}, Trigger Times: {triggertimes}, Scheduler: Plateau"
+                    f"Augmentor LR: {scheduler1_a.optimizer.param_groups[0]['lr']}, Trigger Times: {triggertimes}, Scheduler: Plateau"
+                )
+                io.cprint(
+                    f"Classifier LR: {scheduler1_c.optimizer.param_groups[0]['lr']}, Trigger Times: {triggertimes}, Scheduler: Plateau"
                 )
             else:
-                scheduler2.step()
+                scheduler2_a.step()
+                scheduler2_c.step()
                 io.cprint(
-                    f"LR: {scheduler2.optimizer.param_groups[0]['lr']}, Scheduler: Step"
+                    f"Augmentor LR: {scheduler2_a.optimizer.param_groups[0]['lr']}, Scheduler: Step"
+                )
+                io.cprint(
+                    f"Classifier LR: {scheduler2_a.optimizer.param_groups[0]['lr']}, Scheduler: Step"
                 )
     # Write output loss' and r2's to csv
     variables = [epoch_list, training_losses_a, training_losses_c, training_r2s, validation_losses, validation_r2s]

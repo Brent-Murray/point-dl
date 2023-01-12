@@ -77,11 +77,11 @@ if __name__ == "__main__":
         "epochs": 300,  # total epochs
         "optimizer_a": "adam",  # augmentor optimizer,
         "optimizer_c": "adam",  # classifier optimizer
-        "lr_a": 1e-5,  # augmentor learning rate
-        "lr_c": 1e-5,  # classifier learning rate
+        "lr_a": 1e-4,  # augmentor learning rate
+        "lr_c": 1e-4,  # classifier learning rate
         "adaptive_lr": True,  # adaptive learning rate
-        "patience": 20,  # patience
-        "step_size": 30,  # step size
+        "patience": 10,  # patience
+        "step_size": 20,  # step size
         "momentum": 0.9,  # sgd momentum
         "num_points": 7168,  # number of points
         "dropout": 0.5,  # dropout rate
