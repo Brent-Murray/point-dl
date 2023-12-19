@@ -4,7 +4,7 @@ import sys
 import warnings
 
 import torch
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Subset
 from tqdm import tqdm
 from utils.tools import (
     IOStream,
@@ -16,6 +16,7 @@ from utils.tools import (
 )
 from utils.augmentation import AugmentPointCloudsInPickle
 from utils.train import test, train
+from utils.send_telegram import send_telegram
 
 warnings.filterwarnings("ignore")
 
@@ -47,34 +48,44 @@ def main(params):
             trainset = torch.utils.data.ConcatDataset(
                 [trainset, aug_trainset]
             )
-    trainloader = DataLoader(trainset, batch_size=params["batch_size"], shuffle=True, pin_memory=True)
+#     trainset_idx = list(range(len(trainset)))
+#     rem = len(trainset_idx) % params["batch_size"]
+#     if rem <= 3:
+#         trainset_idx = trainset_idx[: len(trainset_idx) - rem]
+#         trainset = Subset(trainset, trainset_idx)
+        
+#     trainloader = DataLoader(trainset, batch_size=params["batch_size"], shuffle=True, pin_memory=True)
 
     test_data_path = os.path.join(params["test_path"], str(params["num_points"]))
     test_pickle = params["test_pickle"]
     testset = PointCloudsInPickle(test_data_path, test_pickle)
-    testloader = DataLoader(testset, batch_size=params["batch_size"], shuffle=False, pin_memory=True)
+    # testloader = DataLoader(testset, batch_size=params["batch_size"], shuffle=False, pin_memory=True)
 
     if not params["eval"]:
-        train(params, io, trainloader, testloader)
+        train(params, io, trainset, testset)
         torch.cuda.empty_cache()
     else:
-        test(params, io, testloader)
+        test(params, io, testset)
         
         
 if __name__ == "__main__":
+    n_samples = [1944, 5358, 2250, 2630, 3982, 2034, 347, 9569, 397]
+    class_weights = [1/(100*n/11057) for n in n_samples]
     params = {
-        "exp_name": "dgcnn_pointaugment_7168",  # experiment name
-        "model": "dgcnn",  # model
+        "exp_name": "pn2_pointaugment_7168_WEIGHTS_NOAUG2",  # experiment name
+        "model": "pn2",  # model
+        "augmentor": False,
         "batch_size": 10,  # batch size
+        "train_weights": class_weights, # training weights
         "train_path": r"D:\MurrayBrent\data\RMF_ITD\plots\plot_laz\train\datasets\fps",
-        "train_pickle": r"D:\MurrayBrent\data\RMF_ITD\plots\plot_laz\train\plots_comp.pkl",
+        "train_pickle": r"D:\MurrayBrent\data\RMF_ITD\plots\plot_laz\train\plots_comp_2.pkl",
         "test_path": r"D:\MurrayBrent\data\RMF_ITD\plots\plot_laz\val\datasets\fps",
-        "test_pickle": r"D:\MurrayBrent\data\RMF_ITD\plots\plot_laz\val\plots_comp.pkl",
-        "augment": True, # augment
-        "n_augs": 5, # number of augmentations
+        "test_pickle": r"D:\MurrayBrent\data\RMF_ITD\plots\plot_laz\val\plots_comp_2.pkl",
+        "augment": False, # augment
+        "n_augs": 2, # number of augmentations
         "classes": ['BF', 'BW', 'CE', 'LA', 'PT', 'PJ', 'PO', 'SB', 'SW'],  # classes
         "n_gpus": torch.cuda.device_count(),  # number of gpus
-        "epochs": 300,  # total epochs
+        "epochs": 100,  # total epochs
         "optimizer_a": "adam",  # augmentor optimizer,
         "optimizer_c": "adam",  # classifier optimizer
         "lr_a": 1e-4,  # augmentor learning rate
@@ -92,4 +103,12 @@ if __name__ == "__main__":
         "eval": False,  # run testing
     }
 
+    mn = params["exp_name"]
+    
+    send_telegram(f"Starting {mn}")
     main(params)
+    # try:
+    #     main(params)
+    # except Exception as e:
+    #     print(str(e))
+    #     send_telegram(str(e))
